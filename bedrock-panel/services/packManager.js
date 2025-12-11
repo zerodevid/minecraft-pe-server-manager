@@ -205,7 +205,9 @@ function packsDiffer(existing, incoming) {
   const versionChanged = JSON.stringify(existing.version || []) !== JSON.stringify(incoming.version || []);
   const depsChanged =
     JSON.stringify(existing.dependencies || []) !== JSON.stringify(incoming.dependencies || []);
-  return versionChanged || depsChanged;
+  const worldsChanged =
+    JSON.stringify(existing.enabledWorlds || []) !== JSON.stringify(incoming.enabledWorlds || []);
+  return versionChanged || depsChanged || worldsChanged;
 }
 
 let syncPending = false;
@@ -329,7 +331,7 @@ async function installPack(uploadPath) {
   let extractDir;
   try {
     ensureSyncedPacks();
- 
+
     const zip = new AdmZip(uploadPath);
     extractDir = path.join(path.dirname(uploadPath), `extract_${Date.now()}`);
     fs.rmSync(extractDir, { recursive: true, force: true });
@@ -388,7 +390,7 @@ async function installPack(uploadPath) {
     writePacks(packs);
     return installed;
   } finally {
-    await fs.promises.unlink(uploadPath).catch(() => {});
+    await fs.promises.unlink(uploadPath).catch(() => { });
     if (extractDir) {
       fs.rmSync(extractDir, { recursive: true, force: true });
     }
