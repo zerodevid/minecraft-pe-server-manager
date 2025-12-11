@@ -66,6 +66,9 @@ function readJson(filePath) {
     const content = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(content);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      console.error(`[WorldJson] Failed to parse JSON at ${filePath}:`, error.message);
+    }
     return [];
   }
 }
