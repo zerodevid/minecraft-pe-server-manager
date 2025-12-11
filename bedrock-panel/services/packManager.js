@@ -180,6 +180,10 @@ function gatherInstalledPacks() {
 }
 
 function getWorldAssignments() {
+  const activeWorld = worldManager.getActiveWorld();
+  if (activeWorld) {
+    worldJson.syncRootToWorld(activeWorld);
+  }
   const worlds = worldManager.listWorlds().map((entry) => entry.name);
   const assignments = new Map();
 
