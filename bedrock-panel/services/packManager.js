@@ -179,6 +179,24 @@ function gatherInstalledPacks() {
   return SCAN_DIRS.flatMap(({ dir, type }) => scanDirectoryForPacks(dir, type));
 }
 
+function getWorldAssignments() {
+  const worlds = worldManager.listWorlds().map((entry) => entry.name);
+  const assignments = new Map();
+
+  worlds.forEach((world) => {
+    const { behavior, resource } = worldJson.getWorldPackEntries(world);
+    [...behavior, ...resource].forEach((entry) => {
+      if (!entry?.pack_id) return;
+      if (!assignments.has(entry.pack_id)) {
+        assignments.set(entry.pack_id, new Set());
+      }
+      assignments.get(entry.pack_id).add(world);
+    });
+  });
+
+  return assignments;
+}
+
 function packsDiffer(existing, incoming) {
   const basicFields = ['name', 'type', 'folder', 'icon', 'bundleId'];
   if (basicFields.some((field) => (existing[field] || null) !== (incoming[field] || null))) {
@@ -209,15 +227,18 @@ function syncInstalledPacks() {
   const diskUuids = new Set(diskPacks.map((pack) => pack.uuid));
   const current = readPacks();
   const map = new Map(current.map((pack) => [pack.uuid, pack]));
+  const worldAssignments = getWorldAssignments();
   let changed = false;
 
   diskPacks.forEach((diskPack) => {
     const existing = map.get(diskPack.uuid);
+    const assignedWorlds = worldAssignments.get(diskPack.uuid);
+    const enabledWorlds = assignedWorlds ? Array.from(assignedWorlds).sort() : [];
     if (existing) {
       const merged = {
         ...existing,
         ...diskPack,
-        enabledWorlds: Array.isArray(existing.enabledWorlds) ? existing.enabledWorlds : [],
+        enabledWorlds,
       };
       if (!Array.isArray(merged.dependencies)) {
         merged.dependencies = [];

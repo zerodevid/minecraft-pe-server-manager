@@ -61,8 +61,28 @@ function applyWorldToRoot(world) {
   fs.copyFileSync(resource, rootResource);
 }
 
+function readJson(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(content);
+  } catch (error) {
+    return [];
+  }
+}
+
+function getWorldPackEntries(world) {
+  if (!world) return { behavior: [], resource: [] };
+  ensureWorldPackFiles(world);
+  const { behavior, resource } = getWorldPaths(world);
+  return {
+    behavior: readJson(behavior),
+    resource: readJson(resource),
+  };
+}
+
 module.exports = {
   syncWorldFiles,
   ensureWorldPackFiles,
   applyWorldToRoot,
+  getWorldPackEntries,
 };
