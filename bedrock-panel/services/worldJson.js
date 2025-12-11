@@ -80,24 +80,9 @@ function getWorldPackEntries(world) {
   };
 }
 
-function syncRootToWorld(world) {
-  if (!world) return;
-  ensureWorldPackFiles(world);
-  const { behavior, resource } = getWorldPaths(world);
-  const rootBehavior = path.join(BDS_DIR, 'world_behavior_packs.json');
-  const rootResource = path.join(BDS_DIR, 'world_resource_packs.json');
-  if (fs.existsSync(rootBehavior)) {
-    writeJson(behavior, readJson(rootBehavior));
-  }
-  if (fs.existsSync(rootResource)) {
-    writeJson(resource, readJson(rootResource));
-  }
-}
-
 module.exports = {
   syncWorldFiles,
   ensureWorldPackFiles,
   applyWorldToRoot,
   getWorldPackEntries,
-  syncRootToWorld,
 };
