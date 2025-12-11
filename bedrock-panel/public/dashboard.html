@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bedrock Panel · Dashboard</title>
+    <link rel="stylesheet" href="/css/tailwind.css" />
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="min-h-screen flex">
+      <aside class="w-64 bg-slate-900 p-6 space-y-8">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-slate-400">Bedrock</p>
+          <h1 class="text-xl font-semibold">Server Panel</h1>
+        </div>
+        <nav class="space-y-2 text-sm font-medium">
+          <a class="block px-3 py-2 rounded bg-indigo-600 text-white" href="/dashboard.html">Dashboard</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/console.html">Console</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/players.html">Players</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/packs.html">Packs</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/upload.html">Upload Pack</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/worlds.html">Worlds</a>
+        </nav>
+      </aside>
+      <main class="flex-1 p-8 space-y-8">
+        <header>
+          <h2 class="text-2xl font-semibold">Dashboard</h2>
+          <p class="text-slate-400 text-sm">Monitor server health and control the Bedrock instance.</p>
+          <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <label class="text-slate-400" for="world-select">World</label>
+            <select id="world-select" class="bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 min-w-[160px]"></select>
+            <a class="text-indigo-400 text-xs hover:underline" href="/worlds.html">Manage worlds</a>
+          </div>
+        </header>
+        <section class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <article class="bg-slate-900 rounded-xl p-6 shadow">
+            <p class="text-slate-400 text-xs uppercase">Server Status</p>
+            <p class="text-3xl font-semibold mt-2" id="server-status">—</p>
+          </article>
+          <article class="bg-slate-900 rounded-xl p-6 shadow">
+            <p class="text-slate-400 text-xs uppercase">Active Players</p>
+            <p class="text-3xl font-semibold mt-2" id="player-count">0</p>
+          </article>
+          <article class="bg-slate-900 rounded-xl p-6 shadow">
+            <p class="text-slate-400 text-xs uppercase">Enabled Packs</p>
+            <p class="text-3xl font-semibold mt-2" id="pack-count">0</p>
+          </article>
+          <article class="bg-slate-900 rounded-xl p-6 shadow">
+            <p class="text-slate-400 text-xs uppercase">Server Version</p>
+            <p class="text-3xl font-semibold mt-2" id="server-version">—</p>
+          </article>
+        </section>
+        <section class="bg-slate-900 rounded-xl p-8 shadow space-y-4">
+          <h3 class="text-lg font-semibold">Controls</h3>
+          <div class="flex flex-wrap gap-4">
+            <button id="btn-start" class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white">Start Server</button>
+            <button id="btn-stop" class="px-4 py-2 rounded bg-rose-600 hover:bg-rose-500 text-white">Stop Server</button>
+            <button id="btn-restart" class="px-4 py-2 rounded bg-amber-500 hover:bg-amber-400 text-white">Restart Server</button>
+          </div>
+          <p class="text-sm text-slate-400" id="control-feedback"></p>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/js/dashboard.js"></script>
+  </body>
+</html>

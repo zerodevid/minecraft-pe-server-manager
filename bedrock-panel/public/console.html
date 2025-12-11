@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bedrock Panel · Console</title>
+    <link rel="stylesheet" href="/css/tailwind.css" />
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="min-h-screen flex">
+      <aside class="w-64 bg-slate-900 p-6 space-y-8">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-slate-400">Bedrock</p>
+          <h1 class="text-xl font-semibold">Server Panel</h1>
+        </div>
+        <nav class="space-y-2 text-sm font-medium">
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/dashboard.html">Dashboard</a>
+          <a class="block px-3 py-2 rounded bg-indigo-600 text-white" href="/console.html">Console</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/players.html">Players</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/packs.html">Packs</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/upload.html">Upload Pack</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/worlds.html">Worlds</a>
+        </nav>
+      </aside>
+      <main class="flex-1 p-8 space-y-6">
+        <header>
+          <h2 class="text-2xl font-semibold">Real-time Console</h2>
+          <p class="text-slate-400 text-sm">Live stream of Bedrock Dedicated Server output.</p>
+          <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <label class="text-slate-400" for="world-select">World</label>
+            <select id="world-select" class="bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 min-w-[160px]"></select>
+            <a class="text-indigo-400 text-xs hover:underline" href="/worlds.html">Manage worlds</a>
+          </div>
+        </header>
+        <section class="bg-black/60 rounded-xl p-4 h-[70vh] flex flex-col">
+          <div id="console-output" class="flex-1 overflow-y-auto font-mono text-sm whitespace-pre-wrap"></div>
+          <form id="command-form" class="mt-4 flex gap-3">
+            <input id="command-input" type="text" placeholder="Enter command" class="flex-1 rounded bg-slate-800 border border-slate-700 px-3 py-2 focus:outline-none" />
+            <button type="submit" class="px-4 py-2 rounded bg-indigo-600 text-white">Send</button>
+          </form>
+          <p class="text-xs text-slate-500 mt-2" id="console-feedback"></p>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/js/console.js"></script>
+  </body>
+</html>

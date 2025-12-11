@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bedrock Panel · Worlds</title>
+    <link rel="stylesheet" href="/css/tailwind.css" />
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="min-h-screen flex">
+      <aside class="w-64 bg-slate-900 p-6 space-y-8">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-slate-400">Bedrock</p>
+          <h1 class="text-xl font-semibold">Server Panel</h1>
+        </div>
+        <nav class="space-y-2 text-sm font-medium">
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/dashboard.html">Dashboard</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/console.html">Console</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/players.html">Players</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/packs.html">Packs</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/upload.html">Upload Pack</a>
+          <a class="block px-3 py-2 rounded bg-indigo-600 text-white" href="/worlds.html">Worlds</a>
+        </nav>
+      </aside>
+      <main class="flex-1 p-8 space-y-8">
+        <header>
+          <h2 class="text-2xl font-semibold">World Manager</h2>
+          <p class="text-slate-400 text-sm">Select the world for configuration, change the active world, or import new worlds.</p>
+          <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <label class="text-slate-400" for="world-select">World</label>
+            <select id="world-select" class="bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 min-w-[160px]"></select>
+          </div>
+        </header>
+        <section class="bg-slate-900 rounded-xl p-6 shadow space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold">Available Worlds</h3>
+              <p class="text-slate-400 text-sm">Set a world as active or use it in the dashboard.</p>
+            </div>
+            <p class="text-sm text-indigo-400">Active world controls what the Bedrock server loads on start.</p>
+          </div>
+          <p id="world-list-status" class="text-sm text-slate-400"></p>
+          <div id="world-list" class="grid gap-4">
+            <p class="text-slate-500 text-sm">Loading worlds...</p>
+          </div>
+        </section>
+        <section class="bg-slate-900 rounded-xl p-6 shadow space-y-4">
+          <h3 class="text-lg font-semibold">Import World</h3>
+          <p class="text-slate-400 text-sm">Upload a zipped world folder. We will unpack it into <code class="text-xs bg-slate-800 px-1 rounded">/bds/worlds</code>.</p>
+          <input type="file" id="world-file" accept=".zip" class="block w-full text-sm text-slate-200" />
+          <button id="import-world-btn" class="px-4 py-2 rounded bg-indigo-600 text-white disabled:opacity-50" disabled>Import World</button>
+          <p id="world-import-status" class="text-sm text-slate-400"></p>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/js/worlds.js"></script>
+  </body>
+</html>

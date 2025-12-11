@@ -1,0 +1,59 @@
+[
+  {
+    "uuid": "8a8032db-20a4-4dd9-9ff0-4196d3f9de71",
+    "name": "§gULTRAMARINE OVERHAUL",
+    "version": [
+      5,
+      0,
+      1
+    ],
+    "type": "resource",
+    "enabledWorlds": [
+      "world",
+      "Item_Info__v1_16_2"
+    ],
+    "folder": "bds/resource_packs/_gULTRAMARINE_OVERHAUL_8a8032db-20a4-4dd9-9ff0-4196d3f9de71",
+    "icon": "bds/resource_packs/_gULTRAMARINE_OVERHAUL_8a8032db-20a4-4dd9-9ff0-4196d3f9de71/pack_icon.png"
+  },
+  {
+    "uuid": "1f487343-bb10-455a-9c37-3177c125a1d5",
+    "name": "Item Info+ v1.16.2",
+    "version": [
+      1,
+      16,
+      2
+    ],
+    "type": "resource",
+    "folder": "bds/resource_packs/Item_Info__v1_16_2_1f487343-bb10-455a-9c37-3177c125a1d5",
+    "enabledWorlds": [
+      "world"
+    ],
+    "icon": "bds/resource_packs/Item_Info__v1_16_2_1f487343-bb10-455a-9c37-3177c125a1d5/pack_icon.png"
+  },
+  {
+    "uuid": "8b0b3f06-54f2-42de-a535-b0ce0c4b2f2a",
+    "name": "pack.name",
+    "version": [
+      1,
+      0,
+      5
+    ],
+    "type": "behavior",
+    "enabledWorlds": [],
+    "folder": "bds/behavior_packs/pack_name_8b0b3f06-54f2-42de-a535-b0ce0c4b2f2a",
+    "icon": "bds/behavior_packs/pack_name_8b0b3f06-54f2-42de-a535-b0ce0c4b2f2a/pack_icon.png"
+  },
+  {
+    "uuid": "afbb57b7-43f4-404e-9071-829ec1dfe5c9",
+    "name": "pack.name",
+    "version": [
+      1,
+      0,
+      5
+    ],
+    "type": "resource",
+    "enabledWorlds": [],
+    "folder": "bds/resource_packs/pack_name_afbb57b7-43f4-404e-9071-829ec1dfe5c9",
+    "icon": "bds/resource_packs/pack_name_afbb57b7-43f4-404e-9071-829ec1dfe5c9/pack_icon.png"
+  }
+]

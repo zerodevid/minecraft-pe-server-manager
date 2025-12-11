@@ -1,0 +1,68 @@
+const fs = require('fs');
+const path = require('path');
+
+const { BDS_DIR, WORLDS_DIR } = require('../config');
+
+function getWorldPaths(world) {
+  const worldDir = path.join(WORLDS_DIR, world);
+  return {
+    dir: worldDir,
+    behavior: path.join(worldDir, 'world_behavior_packs.json'),
+    resource: path.join(worldDir, 'world_resource_packs.json'),
+  };
+}
+
+function ensureDir(filePath) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+}
+
+function writeJson(filePath, data) {
+  ensureDir(filePath);
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
+
+function ensureWorldPackFiles(world) {
+  if (!world) return;
+  const { behavior, resource } = getWorldPaths(world);
+  ensureDir(behavior);
+  ensureDir(resource);
+  if (!fs.existsSync(behavior)) {
+    fs.writeFileSync(behavior, '[]');
+  }
+  if (!fs.existsSync(resource)) {
+    fs.writeFileSync(resource, '[]');
+  }
+}
+
+function buildPackPayload(packs, world, type) {
+  return packs
+    .filter((p) => Array.isArray(p.enabledWorlds) && p.enabledWorlds.includes(world) && p.type === type)
+    .map((p) => ({ pack_id: p.uuid, version: p.version || [1, 0, 0] }))
+    .sort((a, b) => a.pack_id.localeCompare(b.pack_id));
+}
+
+function syncWorldFiles(packs, world) {
+  if (!world) return;
+  ensureWorldPackFiles(world);
+  const { behavior, resource } = getWorldPaths(world);
+  const behaviorPayload = buildPackPayload(packs, world, 'behavior');
+  const resourcePayload = buildPackPayload(packs, world, 'resource');
+  writeJson(behavior, behaviorPayload);
+  writeJson(resource, resourcePayload);
+}
+
+function applyWorldToRoot(world) {
+  if (!world) return;
+  ensureWorldPackFiles(world);
+  const { behavior, resource } = getWorldPaths(world);
+  const rootBehavior = path.join(BDS_DIR, 'world_behavior_packs.json');
+  const rootResource = path.join(BDS_DIR, 'world_resource_packs.json');
+  fs.copyFileSync(behavior, rootBehavior);
+  fs.copyFileSync(resource, rootResource);
+}
+
+module.exports = {
+  syncWorldFiles,
+  ensureWorldPackFiles,
+  applyWorldToRoot,
+};
