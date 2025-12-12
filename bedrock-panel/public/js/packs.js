@@ -10,8 +10,18 @@ const uploadBtn = document.getElementById('upload-btn');
 const uploadStatusEl = document.getElementById('upload-status');
 let selectedUploadFile = null;
 
+function formatDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toLocaleString();
+}
+
 function packTemplate(group) {
   const iconSrc = group.iconUrl || '/images/pack-placeholder.svg';
+  const groupDate = formatDate(group.entries[0]?.installedAt);
   const rows = group.entries
     .map((pack) => {
       const statusClass = pack.enabled ? 'text-emerald-400' : 'text-slate-400';
@@ -19,11 +29,13 @@ function packTemplate(group) {
       const version = Array.isArray(pack.version) ? pack.version.join('.') : pack.version;
       const toggleAction = pack.enabled ? 'disable' : 'enable';
       const toggleLabel = pack.enabled ? 'Disable' : 'Enable';
+      const uploadedAt = formatDate(pack.installedAt);
       return `
         <div class="flex flex-wrap items-center gap-4 border-t border-slate-800 pt-4 mt-4 first:border-t-0 first:pt-0 first:mt-0">
           <div class="flex-1 min-w-[200px]">
             <p class="text-sm text-slate-300">${pack.type === 'behavior' ? 'Behavior Pack' : 'Resource Pack'} · v${version}</p>
             <p class="text-xs text-slate-500 break-all">${pack.uuid}</p>
+            ${uploadedAt ? `<p class="text-xs text-slate-500">Uploaded ${uploadedAt}</p>` : ''}
             <span class="text-xs uppercase ${statusClass}">${statusLabel}</span>
           </div>
           <div class="flex gap-3">
@@ -42,6 +54,7 @@ function packTemplate(group) {
         <div class="flex-1">
           <h3 class="text-lg font-semibold">${group.name}</h3>
           <p class="text-sm text-slate-500">${group.entries.length} pack${group.entries.length > 1 ? 's' : ''}</p>
+          ${groupDate ? `<p class="text-xs text-slate-500">Uploaded ${groupDate}</p>` : ''}
         </div>
       </div>
       <div class="space-y-2">

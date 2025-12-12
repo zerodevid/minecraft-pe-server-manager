@@ -28,6 +28,7 @@ interface Pack {
   enabled?: boolean;
   enabledWorlds?: string[];
   iconUrl?: string | null;
+  installedAt?: string;
 }
 
 function readPacks(): Pack[] {
@@ -83,6 +84,10 @@ function normalizePack(pack: any): Pack {
     }
   }
 
+  if (!pack.installedAt) {
+    pack.installedAt = getFolderTimestamp(pack.folder);
+  }
+
   return pack;
 }
 
@@ -131,6 +136,17 @@ function locateIcon(folderPath: string) {
     return path.relative(ROOT_DIR, iconFile);
   }
   return null;
+}
+
+function getFolderTimestamp(folderRelative?: string) {
+  if (!folderRelative) return undefined;
+  const absolute = path.isAbsolute(folderRelative) ? folderRelative : path.join(ROOT_DIR, folderRelative);
+  try {
+    const stats = fs.statSync(absolute);
+    return stats.birthtime?.toISOString() || stats.mtime?.toISOString();
+  } catch (error) {
+    return undefined;
+  }
 }
 
 function slugify(value = '') {
@@ -380,6 +396,7 @@ export async function installPack(uploadPath: string) {
       const bundleId = dependencyMatch?.bundleId || getBundleId(manifest);
 
       copyDirectory(packRoot, destination);
+      const stats = fs.statSync(destination);
 
       const packData: Pack = {
         uuid,
@@ -392,6 +409,7 @@ export async function installPack(uploadPath: string) {
         icon: locateIcon(destination),
         bundleId,
         dependencies,
+        installedAt: stats.birthtime?.toISOString() || new Date().toISOString(),
       };
 
       const existingIndex = packs.findIndex((p) => p.uuid === uuid);
@@ -426,11 +444,15 @@ function getIconData(iconPath?: string | null) {
 
 export function getPacks(world = DEFAULT_WORLD) {
   ensureSyncedPacks();
-  return readPacks().map((pack) => ({
-    ...pack,
-    iconUrl: getIconData(pack.icon),
-    enabled: pack.enabledWorlds?.includes(world) ?? false,
-  }));
+  return readPacks().map((pack) => {
+    const installedAt = pack.installedAt || getFolderTimestamp(pack.folder);
+    return {
+      ...pack,
+      installedAt,
+      iconUrl: getIconData(pack.icon),
+      enabled: pack.enabledWorlds?.includes(world) ?? false,
+    };
+  });
 }
 
 function updatePackState({ uuid, bundleId, enabled, world = DEFAULT_WORLD }: any) {
