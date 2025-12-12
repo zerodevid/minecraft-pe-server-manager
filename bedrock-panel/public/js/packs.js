@@ -19,9 +19,17 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+function getTimestamp(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) {
+    return 0;
+  }
+  return date.getTime();
+}
+
 function packTemplate(group) {
   const iconSrc = group.iconUrl || '/images/pack-placeholder.svg';
-  const groupDate = formatDate(group.entries[0]?.installedAt);
+  const groupDate = group.latestTimestamp ? new Date(group.latestTimestamp).toLocaleString() : null;
   const rows = group.entries
     .map((pack) => {
       const statusClass = pack.enabled ? 'text-emerald-400' : 'text-slate-400';
@@ -117,7 +125,14 @@ function groupPacks(packs) {
       group.name = pack.name;
     }
   });
-  return Array.from(map.values());
+  const groups = Array.from(map.values()).map((group) => {
+    group.entries.sort((a, b) => getTimestamp(b.installedAt) - getTimestamp(a.installedAt));
+    group.latestTimestamp = getTimestamp(group.entries[0]?.installedAt);
+    return group;
+  });
+
+  groups.sort((a, b) => (b.latestTimestamp || 0) - (a.latestTimestamp || 0));
+  return groups;
 }
 
 function renderPacks(packs) {
