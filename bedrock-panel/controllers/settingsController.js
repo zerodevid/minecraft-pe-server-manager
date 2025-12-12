@@ -51,11 +51,11 @@ exports.updateTelegramSettings = (req, res) => {
   }
 };
 
-exports.testTelegramObj = (req, res) => {
+exports.testTelegramObj = async (req, res) => {
   try {
-    telegramBot.sendMessage('Test notification from Bedrock Panel! 🚀');
+    await telegramBot.sendMessage('Test notification from Bedrock Panel! 🚀');
     res.json({ message: 'Test message sent. Check your telegram.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };

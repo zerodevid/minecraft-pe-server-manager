@@ -168,23 +168,40 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         this.config = appSettings.getTelegram();
         if (this.config.enabled && this.config.botToken && this.config.chatId) {
             this.initBot();
-            this.sendMessage('Telegram notifications have been updated and re-enabled.');
+            this.sendMessage('Telegram notifications have been updated and re-enabled.').catch(() => {});
         } else {
-            if (this.bot) {
-                // this.bot.stopPolling();
-                this.bot = null;
+            this.stopBot();
+        }
+    }
+
+    stopBot() {
+        if (this.bot) {
+            try {
+                this.bot.stopPolling();
+            } catch (err) {
+                console.error('Failed to stop Telegram bot polling:', err.message);
             }
-            if (this.hourlyInterval) {
-                clearInterval(this.hourlyInterval);
-                this.hourlyInterval = null;
-            }
+            this.bot = null;
+        }
+        if (this.hourlyInterval) {
+            clearInterval(this.hourlyInterval);
+            this.hourlyInterval = null;
         }
     }
 
     sendMessage(text) {
-        if (!this.bot || !this.config.enabled || !this.config.chatId) return;
-        this.bot.sendMessage(this.config.chatId, text).catch(err => {
+        if (!this.config.enabled) {
+            return Promise.reject(new Error('Telegram notifications are disabled.'));
+        }
+        if (!this.config.chatId) {
+            return Promise.reject(new Error('Telegram chat ID is not set.'));
+        }
+        if (!this.bot) {
+            return Promise.reject(new Error('Telegram bot is not running.'));
+        }
+        return this.bot.sendMessage(this.config.chatId, text).catch(err => {
             console.error('Telegram Send Error:', err.message);
+            throw err;
         });
     }
 
@@ -192,9 +209,9 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         // Server Status Events
         bedrockProcess.on('status', (status) => {
             if (status === 'running' && this.config.events.serverStart) {
-                this.sendMessage('🟢 **Server Started**\nThe Minecraft server is now online.');
+                this.sendMessage('🟢 **Server Started**\nThe Minecraft server is now online.').catch(() => {});
             } else if (status === 'stopped' && this.config.events.serverStop) {
-                this.sendMessage('🔴 **Server Stopped**\nThe Minecraft server has stopped.');
+                this.sendMessage('🔴 **Server Stopped**\nThe Minecraft server has stopped.').catch(() => {});
             }
         });
 
@@ -204,7 +221,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
             const joined = currentPlayers.filter(p => !this.lastPlayers.find(lp => lp.xuid === p.xuid));
             joined.forEach(p => {
                 if (this.config.events.playerJoin) {
-                    this.sendMessage(`👤 **Player Joined**\n${p.name} has joined the game.`);
+                    this.sendMessage(`👤 **Player Joined**\n${p.name} has joined the game.`).catch(() => {});
                 }
             });
 
@@ -212,7 +229,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
             const left = this.lastPlayers.filter(lp => !currentPlayers.find(p => p.xuid === lp.xuid));
             left.forEach(p => {
                 if (this.config.events.playerLeave) {
-                    this.sendMessage(`👋 **Player Left**\n${p.name} has left the game.`);
+                    this.sendMessage(`👋 **Player Left**\n${p.name} has left the game.`).catch(() => {});
                 }
             });
 
@@ -227,7 +244,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
                 // Let's look for "Banned" keyword or "Unbanned".
                 // Based on simple bedrock behavior, it might be "Banned Name".
                 if (line.includes('Banned') && !line.includes('Function')) { // Avoid debugging noise
-                    this.sendMessage(`🚫 **Ban Event Detected**\nLog: ${line}`);
+                    this.sendMessage(`🚫 **Ban Event Detected**\nLog: ${line}`).catch(() => {});
                 }
             }
         });
@@ -248,7 +265,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
             msg += `Players: ${players.length}\n`;
             msg += `RAM Usage (Panel): ${memUsage.toFixed(2)} MB`;
 
-            this.sendMessage(msg);
+            this.sendMessage(msg).catch(() => {});
         }, 3600000); // 1 hour
     }
 }
