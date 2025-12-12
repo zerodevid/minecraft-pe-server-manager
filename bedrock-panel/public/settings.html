@@ -43,6 +43,73 @@
             </button>
           </div>
         </section>
+
+        <!-- Telegram Notifications Section -->
+        <header class="max-w-3xl space-y-3 pt-6 border-t border-slate-800">
+          <h2 class="text-2xl font-semibold">Telegram Notifications</h2>
+          <p class="text-slate-400 text-sm">
+            Configure a Telegram bot to receive real-time updates about your server status, player activity, and bans.
+          </p>
+        </header>
+
+        <section class="bg-slate-900 rounded-xl p-6 shadow space-y-6">
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2">
+               <input type="checkbox" id="tg-enabled" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-600">
+               <label for="tg-enabled" class="font-medium">Enable Telegram Notifications</label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1 text-slate-300">Bot Token</label>
+                <input type="password" id="tg-token" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" placeholder="123456789:ABCDef...">
+                <p class="text-xs text-slate-500 mt-1">Get this from <a href="https://t.me/BotFather" target="_blank" class="text-indigo-400">@BotFather</a></p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1 text-slate-300">Chat ID</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="tg-chatid" class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" placeholder="-100123456789">
+                    <button id="tg-test-btn" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded text-xs text-white">Test</button>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">ID of the user or group to receive messages.</p>
+              </div>
+            </div>
+
+            <div class="space-y-2 pt-2">
+               <p class="text-sm font-medium text-slate-300">Notification Events</p>
+               <div class="grid grid-cols-2 gap-2 text-sm">
+                 <label class="flex items-center space-x-2">
+                   <input type="checkbox" id="tg-event-start" class="rounded bg-slate-800 border-slate-700 text-indigo-600">
+                   <span>Server Start</span>
+                 </label>
+                 <label class="flex items-center space-x-2">
+                    <input type="checkbox" id="tg-event-stop" class="rounded bg-slate-800 border-slate-700 text-indigo-600">
+                    <span>Server Stop</span>
+                  </label>
+                  <label class="flex items-center space-x-2">
+                    <input type="checkbox" id="tg-event-join" class="rounded bg-slate-800 border-slate-700 text-indigo-600">
+                    <span>Player Join</span>
+                  </label>
+                  <label class="flex items-center space-x-2">
+                    <input type="checkbox" id="tg-event-leave" class="rounded bg-slate-800 border-slate-700 text-indigo-600">
+                    <span>Player Leave</span>
+                  </label>
+                  <label class="flex items-center space-x-2">
+                    <input type="checkbox" id="tg-event-ban" class="rounded bg-slate-800 border-slate-700 text-indigo-600">
+                    <span>Player Banned</span>
+                  </label>
+                  <label class="flex items-center space-x-2">
+                    <input type="checkbox" id="tg-event-hourly" class="rounded bg-slate-800 border-slate-700 text-indigo-600">
+                    <span>Hourly Status</span>
+                  </label>
+               </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end border-t border-slate-800 pt-4">
+             <button id="save-telegram" class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-500">Save Telegram Settings</button>
+          </div>
+        </section>
       </main>
     </div>
     <script type="module" src="/js/settings.js"></script>

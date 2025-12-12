@@ -1,96 +1,136 @@
 # Bedrock Server Panel
 
-A web-based control panel for managing a Minecraft Bedrock Dedicated Server (BDS). This application provides a modern dashboard to control the server state, manage worlds, configure resource/behavior packs, and edit server properties.
+![Bedrock Panel](https://placehold.co/600x400?text=Bedrock+Panel)
 
-## Features
+**Bedrock Server Panel** is a powerful, web-based management interface for the Minecraft Bedrock Dedicated Server (BDS). It simplifies server administration by providing a GUI for controlling the server instance, managing resource packs, editing world settings, and monitoring player activity in real-time.
 
--   **Dashboard**: Start/Stop/Restart server, view real-time console logs, and monitor online players.
--   **Pack Management**: Upload `.mcpack` files, enable/disable packs per world. Auto-cleans pack names (removes color codes).
--   **World Management**: Import worlds (`.mcworld` or `.zip`), select active level, and backup worlds.
--   **Settings Editor**: GUI for `server.properties` and whitelist management.
--   **Auto-Restart**: Automatically restarts the server if it crashes.
+---
 
-## Prerequisites
+## 🌟 Key Features
 
--   [Node.js](https://nodejs.org/) (v16 or higher)
--   Minecraft Bedrock Dedicated Server for command line ("bedrock_server" binary).
+### 🎮 Server Control
+- **Start / Stop / Restart**: Full control over the server lifecycle.
+- **Auto-Restart**: Automatically detects crashes and restarts the server process.
+- **Auto-Start**: Can be configured to start the Minecraft server automatically when the panel launches (or on system boot).
 
-## Installation
+### 📊 Real-Time Monitoring
+- **Console Stream**: View the live server console logs directly in your browser.
+- **Player List**: See who is online, their XUID, and connection status.
+- **Resource Usage**: Monitor server RAM usage (via Telegram reports).
 
-1.  **Clone the Repository** (or download source code):
-    ```bash
-    git clone <repository_url>
-    cd bedrock-panel
-    ```
+### 📦 Asset Management
+- **Pack Manager**: Upload `.mcpack` files via drag-and-drop.
+- **World Manager**: Import `.mcworld` or `.zip` archives to restore or switch worlds.
+- **Auto-Sync**: Automatically updates `world_resource_packs.json` and `world_behavior_packs.json` when you toggle packs in the UI.
+- **Name Cleaning**: Automatically removes Minecraft color codes (e.g., `§e`) from pack names for cleaner display.
 
-2.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
+### ⚙️ Configuration
+- **Server Properties**: Edit `server.properties` (Gamemode, Difficulty, Port, etc.) through a user-friendly form.
+- **Allowlist / Whitelist**: Manage whitelisted players via the GUI (future update).
 
-3.  **Setup Bedrock Server**:
-    -   Download the Bedrock Dedicated Server software from the [official website](https://www.minecraft.net/en-us/download/server/bedrock).
-    -   Extract the downloaded files into a `bds` folder inside the `bedrock-panel` directory.
-    -   **Important**: Ensure the `bedrock_server` executable is directly inside `bedrock-panel/bds/`.
+### 📱 Telegram Integration
+- **Notifications**: Get real-time alerts for server events.
+- **Events**: Server Start/Stop, Player Join/Leave, Bans.
+- **Hourly Status**: Receive periodic reports on server health and player counts.
 
-    *Directory Structure:*
-    ```
-    bedrock-panel/
-    ├── bds/
-    │   ├── bedrock_server
-    │   ├── server.properties
-    │   └── ...
-    ├── src/
-    ├── server.js
-    └── ...
-    ```
+---
 
-    *Alternatively, you can point to an existing BDS installation by creating a `.env` file:*
-    ```env
-    BDS_DIR=/absolute/path/to/your/bedrock-server-folder
-    PORT=4000
-    ```
+## 🛠️ System Architecture & Flow
 
-## Usage
+### 1. The Core (Node.js & Express)
+The application runs on a **Node.js** backend using **Express** for the API and static file serving.
+- **`server.js`**: The entry point. Handles HTTP requests and initializes the WebSocket server.
+- **`bedrockProcess.js`**: A singleton service wrapping the `spawn` process of the Bedrock binary. It captures `stdout`/`stderr` and pipes it to the web console.
 
-1.  **Start the Panel**:
-    ```bash
-    npm start
-    ```
+### 2. Real-Time Communication
+- **WebSockets (`ws`)**: Connects the frontend to the backend.
+- **Flow**:
+    1. Server logs are emitted from the child process.
+    2. Backend captures these logs.
+    3. WebSocket service broadcasts logs to all connected web clients instantly.
 
-2.  **Access the Dashboard**:
-    Open your browser and navigate to `http://localhost:4000`.
+### 3. Data Management
+- **File System**: The app directly reads/writes to the `bds/` directory (properties, JSON files).
+- **Pack Logic**:
+    - Parsing manifests (`manifest.json`) inside packs to identify UUIDs and versions.
+    - Intelligent diffing against `world_resource_packs.json` to ensure consistency.
 
-## Auto-Start on Boot (Optional)
+---
 
-To ensure the panel starts automatically when your computer restarts, use [PM2](https://pm2.keymetrics.io/).
+## 🚀 Installation Guide
 
-1.  **Install PM2**:
-    ```bash
-    npm install -g pm2
-    ```
+### Prerequisites
+1.  **Node.js**: v16.0.0 or higher.
+2.  **Bedrock Server Binary**: Download from [Minecraft.net](https://www.minecraft.net/en-us/download/server/bedrock) (Ubuntu/Windows version depending on your OS, or MacOS workaround).
 
-2.  **Start the application with PM2**:
-    ```bash
-    pm2 start npm --name "bedrock-panel" -- run start
-    ```
+### Step 1: Clone & Install
+```bash
+# Clone the repository
+git clone https://github.com/zerodevid/minecraft-pe-server-manager.git
+cd bedrock-panel
 
-3.  **Save the process list**:
-    ```bash
-    pm2 save
-    ```
+# Install Node dependencies
+npm install
+```
 
-4.  **Generate startup script**:
-    ```bash
-    pm2 startup
-    ```
-    (Copy and paste the command PM2 outputs to finish setup).
+### Step 2: Set Up Bedrock Server
+1.  Create a folder named `bds` inside the `bedrock-panel` directory.
+2.  Extract your Bedrock Dedicated Server files into `bds/`.
+3.  **Verify**: Ensure `bedrock_server` (executable) and `server.properties` exist at `bedrock-panel/bds/bedrock_server`.
 
-## Troubleshooting
+*Note for Mac Users*: You may need to allow the binary to run via `chmod +x bds/bedrock_server` and potentially clear quarantine attributes if downloaded from the web.
 
--   **"Pack changes not saving"**: Ensure the server is stopped before enabling/disabling packs to avoid file conflicts, although the panel tries to handle sync automatically.
--   **"Permission denied"**: On Linux/Mac, ensure `bedrock_server` has execute permissions: `chmod +x bds/bedrock_server`.
+### Step 3: Run the Panel
+```bash
+npm start
+```
+The panel will be accessible at: `http://localhost:4000`
+
+---
+
+## 📲 Telegram Bot Setup
+1.  Open **Settings** in the web panel.
+2.  Scroll to **Telegram Notifications**.
+3.  **Create a Bot**: Message [@BotFather](https://t.me/BotFather) on Telegram and create a new bot to get a **Token**.
+4.  **Get Chat ID**: Message the bot or add it to a group to get the Chat ID.
+5.  Enter credentials in the panel and click **Save**.
+
+---
+
+## 🔄 Auto-Start (Production)
+To run the panel 24/7 and have it start on boot, use **PM2**.
+
+```bash
+# 1. Install PM2 globally
+npm install -g pm2
+
+# 2. Start the panel
+pm2 start npm --name "bedrock-panel" -- run start
+
+# 3. Freeze the process list
+pm2 save
+
+# 4. Generate startup script
+pm2 startup
+```
+*Run the command generated by the last step to finalize.*
+
+---
+
+## 📂 Project Structure
+```
+bedrock-panel/
+├── bds/                  # Bedrock Server files (Ignored by Git)
+├── public/               # Frontend (HTML, CSS, JS)
+├── services/
+│   ├── bedrockProcess.js # Manages the server process
+│   ├── packManager.js    # Logic for resource/behavior packs
+│   ├── serverProperties.js # Parser for properties file
+│   └── telegramBot.js    # Telegram notification service
+├── controllers/          # API Route Handlers
+├── app.js                # Express App Setup
+└── server.js             # Entry Point
+```
 
 ## License
-
-MIT
+MIT License

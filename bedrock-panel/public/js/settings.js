@@ -174,3 +174,101 @@ saveButton?.addEventListener('click', (event) => {
 });
 
 loadSettings();
+
+// --- Telegram Settings Logic ---
+
+const tgSaveBtn = document.getElementById('save-telegram');
+const tgTestBtn = document.getElementById('tg-test-btn');
+
+async function loadTelegramSettings() {
+  if (tgSaveBtn) tgSaveBtn.disabled = true;
+  try {
+    const res = await fetch('/api/settings/panel');
+    const data = await res.json();
+    if (res.ok && data.telegram) {
+      const t = data.telegram;
+      document.getElementById('tg-enabled').checked = t.enabled;
+      document.getElementById('tg-token').value = t.botToken || '';
+      document.getElementById('tg-chatid').value = t.chatId || '';
+
+      document.getElementById('tg-event-start').checked = t.events.serverStart;
+      document.getElementById('tg-event-stop').checked = t.events.serverStop;
+      document.getElementById('tg-event-join').checked = t.events.playerJoin;
+      document.getElementById('tg-event-leave').checked = t.events.playerLeave;
+      document.getElementById('tg-event-ban').checked = t.events.playerBan;
+      document.getElementById('tg-event-hourly').checked = t.events.hourlyStatus;
+    }
+  } catch (err) {
+    console.error('Failed to load telegram settings', err);
+  } finally {
+    if (tgSaveBtn) tgSaveBtn.disabled = false;
+  }
+}
+
+async function saveTelegramSettings() {
+  const payload = {
+    enabled: document.getElementById('tg-enabled').checked,
+    botToken: document.getElementById('tg-token').value,
+    chatId: document.getElementById('tg-chatid').value,
+    events: {
+      serverStart: document.getElementById('tg-event-start').checked,
+      serverStop: document.getElementById('tg-event-stop').checked,
+      playerJoin: document.getElementById('tg-event-join').checked,
+      playerLeave: document.getElementById('tg-event-leave').checked,
+      playerBan: document.getElementById('tg-event-ban').checked,
+      hourlyStatus: document.getElementById('tg-event-hourly').checked,
+    }
+  };
+
+  tgSaveBtn.textContent = 'Saving...';
+  tgSaveBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/settings/telegram', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      tgSaveBtn.textContent = 'Saved!';
+      setTimeout(() => tgSaveBtn.textContent = 'Save Telegram Settings', 2000);
+    } else {
+      alert(data.message || 'Failed to save');
+      tgSaveBtn.textContent = 'Save Failed';
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error saving settings');
+  } finally {
+    tgSaveBtn.disabled = false;
+  }
+}
+
+async function testTelegram() {
+  tgTestBtn.disabled = true;
+  tgTestBtn.textContent = '...';
+  try {
+    const res = await fetch('/api/settings/telegram/test', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      alert(data.message);
+    } else {
+      alert('Error: ' + data.message);
+    }
+  } catch (err) {
+    alert('Req failed');
+  } finally {
+    tgTestBtn.disabled = false;
+    tgTestBtn.textContent = 'Test';
+  }
+}
+
+if (tgSaveBtn) {
+  tgSaveBtn.addEventListener('click', saveTelegramSettings);
+}
+if (tgTestBtn) {
+  tgTestBtn.addEventListener('click', testTelegram);
+}
+
+loadTelegramSettings();

@@ -22,12 +22,146 @@ class TelegramService {
             if (this.bot) {
                 this.bot.stopPolling();
             }
-            this.bot = new TelegramBot(this.config.botToken, { polling: false }); // We only send messages primarily, polling not strictly needed unless we want commands
+            // Enable polling to receive commands
+            this.bot = new TelegramBot(this.config.botToken, { polling: true });
             console.log('Telegram Bot initialized');
+
+            this.setupMessageListener();
             this.startHourlyStatus();
         } catch (err) {
             console.error('Failed to init Telegram bot:', err);
         }
+    }
+
+    setupMessageListener() {
+        this.bot.on('message', async (msg) => {
+            // Security: Only allow configured Chat ID
+            if (String(msg.chat.id) !== String(this.config.chatId)) {
+                // Optional: log unauthorized access
+                console.log(`Unauthorized Telegram command from ${msg.chat.id}`);
+                return;
+            }
+
+            const text = msg.text;
+            if (!text) return;
+
+            // Handle Bot Control Commands
+            let isBotCommand = false;
+            if (text.startsWith('/')) {
+                const parts = text.split(' ');
+                const command = parts[0].toLowerCase();
+                const args = parts.slice(1).join(' ');
+
+                switch (command) {
+                    case '/status':
+                        isBotCommand = true;
+                        const status = bedrockProcess.getStatus();
+                        const players = bedrockProcess.getPlayers();
+                        await this.sendMessage(`📊 **Server Status**\nStatus: ${status}\nOnline: ${players.length} players`);
+                        break;
+
+                    case '/list':
+                    case '/users':
+                        isBotCommand = true;
+                        const activePlayers = bedrockProcess.getPlayers();
+                        if (activePlayers.length === 0) {
+                            await this.sendMessage('👥 **Active Players**\nNo players currently online.');
+                        } else {
+                            const playerList = activePlayers.map(p => `- ${p.name} (Ping: ${p.ping}ms)`).join('\n');
+                            await this.sendMessage(`👥 **Active Players (${activePlayers.length})**\n${playerList}`);
+                        }
+                        break;
+
+                    case '/start':
+                        isBotCommand = true;
+                        const startRes = bedrockProcess.startServer();
+                        await this.sendMessage(startRes.started ? '🚀 Starting server...' : `❌ Failed to start: ${startRes.message}`);
+                        break;
+
+                    case '/stop':
+                        isBotCommand = true;
+                        const stopRes = bedrockProcess.stopServer();
+                        await this.sendMessage(stopRes.stopped ? '🛑 Stopping server...' : `❌ Failed to stop: ${stopRes.message}`);
+                        break;
+
+                    case '/restart':
+                        isBotCommand = true;
+                        await this.sendMessage('🔄 Restarting server...');
+                        const restartRes = await bedrockProcess.restartServer();
+                        await this.sendMessage(restartRes.restarted ? '✅ Server restarted.' : `❌ Failed to restart: ${restartRes.message}`);
+                        break;
+
+                    case '/kick':
+                        isBotCommand = true;
+                        if (!args) {
+                            await this.sendMessage('⚠️ Usage: /kick <player_name>');
+                        } else {
+                            const kickCmd = `kick "${args}"`;
+                            const kickResult = bedrockProcess.sendCommand(kickCmd);
+                            if (kickResult.sent) {
+                                await this.sendMessage(`👢 **Kicked**: ${args}`);
+                            } else {
+                                await this.sendMessage(`❌ Failed to kick: ${kickResult.message}`);
+                            }
+                        }
+                        break;
+
+                    case '/ban':
+                        isBotCommand = true;
+                        if (!args) {
+                            await this.sendMessage('⚠️ Usage: /ban <player_name>');
+                        } else {
+                            const banCmd = `ban "${args}"`;
+                            const banResult = bedrockProcess.sendCommand(banCmd);
+                            if (banResult.sent) {
+                                await this.sendMessage(`🚫 **Banned**: ${args}`);
+                            } else {
+                                await this.sendMessage(`❌ Failed to ban: ${banResult.message}`);
+                            }
+                        }
+                        break;
+
+                    case '/help':
+                        isBotCommand = true;
+                        const helpMsg = `
+🤖 **Bot Commands**
+/status - Check server status
+/list - List active players
+/start - Start server
+/stop - Stop server
+/restart - Restart server
+/kick <name> - Kick a player
+/ban <name> - Ban a player
+/help - Show this message
+
+**Server Console:**
+You can type any Minecraft command (e.g., "time set day", "weather clear"). The bot will forward it to the server console.
+(Leading "/" is optional for console commands).
+                        `;
+                        await this.sendMessage(helpMsg);
+                        break;
+                }
+            }
+
+            if (!isBotCommand) {
+                // Determine the command to send
+                // If it starts with "/" but wasn't handled above, strip the "/" for console compatibility
+                let cmdToSend = text;
+                if (cmdToSend.startsWith('/')) {
+                    cmdToSend = cmdToSend.substring(1);
+                }
+
+                // Prevent sending empty commands
+                if (!cmdToSend.trim()) return;
+
+                const result = bedrockProcess.sendCommand(cmdToSend);
+                if (result.sent) {
+                    await this.sendMessage(`📥 **Command Sent**: \`${cmdToSend}\``);
+                } else {
+                    await this.sendMessage(`⚠️ **Failed**: ${result.message}`);
+                }
+            }
+        });
     }
 
     reconfigure() {

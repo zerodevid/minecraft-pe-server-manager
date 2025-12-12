@@ -48,6 +48,11 @@ app.get('/api/worlds/:name/backup', worldController.backupWorld);
 app.get('/api/settings', settingsController.getSettings);
 app.put('/api/settings', settingsController.updateSettings);
 
+// Panel Settings Routes
+app.get('/api/settings/panel', settingsController.getPanelSettings);
+app.put('/api/settings/telegram', settingsController.updateTelegramSettings);
+app.post('/api/settings/telegram/test', settingsController.testTelegramObj);
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
