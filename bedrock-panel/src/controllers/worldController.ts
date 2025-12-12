@@ -1,7 +1,9 @@
 import fs from 'fs';
+import path from 'path';
 import { Request, Response } from 'express';
 import worldManager from '../services/worldManager';
 import ensureBdsDir from '../utils/bdsGuard';
+import { WORLDS_DIR } from '../config';
 
 export const listWorlds = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
@@ -76,3 +78,17 @@ export const backupWorld = (req: Request, res: Response) => {
   }
 };
 
+export const getWorldIcon = (req: Request, res: Response) => {
+  if (!ensureBdsDir(res)) {
+    return;
+  }
+  const { name } = req.params;
+  if (!name || name.includes('..') || name.includes('/') || name.includes('\\')) {
+    return res.status(400).json({ message: 'Invalid world name' });
+  }
+  const iconPath = path.join(WORLDS_DIR, name, 'world_icon.jpeg');
+  if (!fs.existsSync(iconPath)) {
+    return res.status(404).json({ message: 'World icon not found' });
+  }
+  return res.sendFile(iconPath);
+};

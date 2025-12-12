@@ -92,6 +92,7 @@ app.post('/api/worlds/select', worldController.selectWorld);
 app.post('/api/worlds/import', upload.single('world'), worldController.importWorld);
 app.delete('/api/worlds/:name', worldController.deleteWorld);
 app.get('/api/worlds/:name/backup', worldController.backupWorld);
+app.get('/api/worlds/:name/icon', worldController.getWorldIcon);
 app.post('/api/auth/login', authController.login);
 app.post('/api/auth/logout', authController.logout);
 app.get('/api/auth/session', authController.sessionInfo);
