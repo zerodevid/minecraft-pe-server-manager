@@ -1,8 +1,9 @@
-const fs = require('fs');
-const worldManager = require('../services/worldManager');
-const ensureBdsDir = require('../utils/bdsGuard');
+import fs from 'fs';
+import { Request, Response } from 'express';
+import worldManager from '../services/worldManager';
+import ensureBdsDir from '../utils/bdsGuard';
 
-exports.listWorlds = (req, res) => {
+export const listWorlds = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -11,7 +12,7 @@ exports.listWorlds = (req, res) => {
   res.json({ worlds, activeWorld });
 };
 
-exports.selectWorld = (req, res) => {
+export const selectWorld = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -23,12 +24,12 @@ exports.selectWorld = (req, res) => {
   try {
     const activeWorld = worldManager.setActiveWorld(name);
     res.json({ activeWorld });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-exports.importWorld = async (req, res) => {
+export const importWorld = async (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -39,12 +40,12 @@ exports.importWorld = async (req, res) => {
   try {
     const world = await worldManager.importWorld(req.file.path);
     res.json(world);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-exports.deleteWorld = (req, res) => {
+export const deleteWorld = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -52,12 +53,12 @@ exports.deleteWorld = (req, res) => {
   try {
     const result = worldManager.deleteWorld(name);
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-exports.backupWorld = (req, res) => {
+export const backupWorld = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -70,7 +71,8 @@ exports.backupWorld = (req, res) => {
         res.status(500).json({ message: err.message });
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
+

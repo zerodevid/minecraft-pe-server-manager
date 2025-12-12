@@ -1,32 +1,33 @@
-const packManager = require('../services/packManager');
-const worldManager = require('../services/worldManager');
-const ensureBdsDir = require('../utils/bdsGuard');
+import { Request, Response } from 'express';
+import packManager from '../services/packManager';
+import worldManager from '../services/worldManager';
+import ensureBdsDir from '../utils/bdsGuard';
 
-function getWorldFromRequest(req) {
-  return req.query.world || req.body?.world || worldManager.getActiveWorld();
+function getWorldFromRequest(req: Request) {
+  return (req.query.world as string) || req.body?.world || worldManager.getActiveWorld();
 }
 
-function ensureWorld(world) {
-  const available = worldManager.listWorlds().map((entry) => entry.name);
+function ensureWorld(world: string) {
+  const available = worldManager.listWorlds().map((entry: any) => entry.name);
   if (!available.includes(world)) {
     throw new Error('World not found');
   }
 }
 
-exports.listPacks = (req, res) => {
+export const listPacks = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
   const world = getWorldFromRequest(req);
   try {
     ensureWorld(world);
-  } catch (error) {
+  } catch (error: any) {
     return res.status(400).json({ message: error.message });
   }
   res.json(packManager.getPacks(world));
 };
 
-exports.uploadPack = async (req, res) => {
+export const uploadPack = async (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -37,12 +38,12 @@ exports.uploadPack = async (req, res) => {
   try {
     const packs = await packManager.installPack(req.file.path);
     res.json({ installed: packs });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-exports.enablePack = (req, res) => {
+export const enablePack = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -55,12 +56,12 @@ exports.enablePack = (req, res) => {
     ensureWorld(world);
     const pack = packManager.enablePack({ uuid, world, bundleId: bundle ? bundleId : undefined });
     res.json(pack);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-exports.disablePack = (req, res) => {
+export const disablePack = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -73,21 +74,22 @@ exports.disablePack = (req, res) => {
     ensureWorld(world);
     const pack = packManager.disablePack({ uuid, world, bundleId: bundle ? bundleId : undefined });
     res.json(pack);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-exports.removePack = (req, res) => {
+export const removePack = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
   const { uuid } = req.params;
   const { bundle, bundleId } = req.query;
   try {
-    const pack = packManager.removePack({ uuid, bundleId: bundle === 'true' ? bundleId : undefined });
+    const pack = packManager.removePack({ uuid, bundleId: bundle === 'true' ? (bundleId as string) : undefined });
     res.json(pack);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
+

@@ -3,6 +3,12 @@ import { handleBdsError } from './bdsWarning.js';
 
 const container = document.getElementById('pack-list');
 const worldSelect = document.getElementById('world-select');
+const dropzone = document.getElementById('dropzone');
+const dropLabel = document.getElementById('dropzone-label');
+const fileInput = document.getElementById('file-input');
+const uploadBtn = document.getElementById('upload-btn');
+const uploadStatusEl = document.getElementById('upload-status');
+let selectedUploadFile = null;
 
 function packTemplate(group) {
   const iconSrc = group.iconUrl || '/images/pack-placeholder.svg';
@@ -149,6 +155,94 @@ async function postPack(action, uuid, world) {
   }
   return data;
 }
+
+function setUploadFile(file) {
+  selectedUploadFile = file;
+  if (!dropLabel || !uploadBtn) return;
+  if (file) {
+    dropLabel.textContent = file.name;
+    uploadBtn.disabled = false;
+    if (uploadStatusEl) {
+      uploadStatusEl.textContent = '';
+    }
+  } else {
+    dropLabel.textContent = 'Drag & drop your pack here';
+    uploadBtn.disabled = true;
+  }
+}
+
+dropzone?.addEventListener('click', () => fileInput?.click());
+
+fileInput?.addEventListener('change', (event) => {
+  const file = event.target.files?.[0];
+  setUploadFile(file || null);
+});
+
+dropzone?.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  dropzone.classList.add('border-indigo-500');
+});
+
+dropzone?.addEventListener('dragleave', () => {
+  dropzone.classList.remove('border-indigo-500');
+});
+
+dropzone?.addEventListener('drop', (event) => {
+  event.preventDefault();
+  dropzone.classList.remove('border-indigo-500');
+  const file = event.dataTransfer?.files?.[0];
+  if (file) {
+    setUploadFile(file);
+  }
+});
+
+async function uploadSelectedPack() {
+  if (!selectedUploadFile || !uploadBtn) return;
+  const form = new FormData();
+  form.append('pack', selectedUploadFile);
+  uploadBtn.disabled = true;
+  if (uploadStatusEl) {
+    uploadStatusEl.textContent = 'Uploading pack...';
+  }
+
+  try {
+    const res = await fetch('/api/packs/upload', {
+      method: 'POST',
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || 'Upload failed');
+    }
+    const installed = Array.isArray(data.installed) ? data.installed : [];
+    if (uploadStatusEl) {
+      if (installed.length === 0) {
+        uploadStatusEl.textContent = 'No packs installed.';
+      } else if (installed.length === 1) {
+        const pack = installed[0];
+        uploadStatusEl.textContent = `Uploaded ${pack.name} (${pack.type})`;
+      } else {
+        const names = installed.map((pack) => `${pack.name} (${pack.type})`).join(', ');
+        uploadStatusEl.textContent = `Uploaded packs: ${names}`;
+      }
+    }
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    setUploadFile(null);
+    await loadPacks(getSelectedWorld());
+  } catch (error) {
+    if (uploadStatusEl) {
+      uploadStatusEl.textContent = error.message;
+    }
+  } finally {
+    if (uploadBtn) {
+      uploadBtn.disabled = false;
+    }
+  }
+}
+
+uploadBtn?.addEventListener('click', uploadSelectedPack);
 
 container?.addEventListener('click', async (event) => {
   const target = event.target.closest('button[data-action]');

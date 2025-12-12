@@ -1,28 +1,29 @@
-const bedrockProcess = require('../services/bedrockProcess');
-const ensureBdsDir = require('../utils/bdsGuard');
-const playerManager = require('../services/playerManager');
+import { Request, Response } from 'express';
+import bedrockProcess from '../services/bedrockProcess';
+import ensureBdsDir from '../utils/bdsGuard';
+import playerManager from '../services/playerManager';
 
-function sanitizeReason(reason) {
+function sanitizeReason(reason: any) {
   if (!reason) return '';
   return String(reason).replace(/[\r\n]/g, ' ').trim();
 }
 
-function wrapName(name) {
+function wrapName(name: any) {
   return `"${String(name).replace(/"/g, '').trim()}"`;
 }
 
-exports.getPlayers = (req, res) => {
+export const getPlayers = (req: Request, res: Response) => {
   res.json({ players: bedrockProcess.getPlayers() });
 };
 
-exports.getBanList = (req, res) => {
+export const getBanList = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
   res.json({ bans: playerManager.listBans() });
 };
 
-exports.kickPlayer = (req, res) => {
+export const kickPlayer = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -40,7 +41,7 @@ exports.kickPlayer = (req, res) => {
   res.json({ message: `Kick command sent for ${name}` });
 };
 
-exports.banPlayer = (req, res) => {
+export const banPlayer = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -51,7 +52,7 @@ exports.banPlayer = (req, res) => {
   let entry;
   try {
     entry = playerManager.upsertBanEntry({ name, xuid });
-  } catch (error) {
+  } catch (error: any) {
     return res.status(400).json({ message: error.message });
   }
 
@@ -70,7 +71,7 @@ exports.banPlayer = (req, res) => {
   res.json({ message, entry });
 };
 
-exports.unbanPlayer = (req, res) => {
+export const unbanPlayer = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -95,3 +96,4 @@ exports.unbanPlayer = (req, res) => {
 
   res.json({ message });
 };
+

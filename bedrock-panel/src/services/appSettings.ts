@@ -1,10 +1,30 @@
-const fs = require('fs');
-const path = require('path');
-const { ROOT_DIR } = require('../config');
+import fs from 'fs';
+import path from 'path';
+import { ROOT_DIR } from '../config';
 
 const SETTINGS_FILE = path.join(ROOT_DIR, 'panel-settings.json');
 
-const defaultSettings = {
+interface TelegramConfig {
+    enabled: boolean;
+    botToken: string;
+    chatId: string;
+    events: {
+        serverStart: boolean;
+        serverStop: boolean;
+        playerJoin: boolean;
+        playerLeave: boolean;
+        playerBan: boolean;
+        hourlyStatus: boolean;
+        [key: string]: boolean;
+    };
+}
+
+interface Settings {
+    telegram: TelegramConfig;
+    [key: string]: any;
+}
+
+const defaultSettings: Settings = {
     telegram: {
         enabled: false,
         botToken: '',
@@ -21,11 +41,13 @@ const defaultSettings = {
 };
 
 class AppSettings {
+    private settings: Settings;
+
     constructor() {
         this.settings = this.load();
     }
 
-    load() {
+    load(): Settings {
         if (!fs.existsSync(SETTINGS_FILE)) {
             return JSON.parse(JSON.stringify(defaultSettings));
         }
@@ -46,26 +68,27 @@ class AppSettings {
         }
     }
 
-    get(key) {
+    get(key?: string) {
         if (key) return this.settings[key];
         return this.settings;
     }
 
-    update(key, value) {
+    update(key: string, value: any) {
         this.settings[key] = value;
         this.save();
     }
 
     // Specific helper for telegram
-    getTelegram() {
+    getTelegram(): TelegramConfig {
         return this.settings.telegram;
     }
 
-    updateTelegram(config) {
+    updateTelegram(config: Partial<TelegramConfig>) {
         this.settings.telegram = { ...this.settings.telegram, ...config };
         this.save();
         return this.settings.telegram;
     }
 }
 
-module.exports = new AppSettings();
+export default new AppSettings();
+

@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-function copyDirectory(source, destination) {
+export function copyDirectory(source: string, destination: string) {
   fs.rmSync(destination, { recursive: true, force: true });
   fs.mkdirSync(destination, { recursive: true });
   const entries = fs.readdirSync(source, { withFileTypes: true });
@@ -17,6 +17,3 @@ function copyDirectory(source, destination) {
   });
 }
 
-module.exports = {
-  copyDirectory,
-};

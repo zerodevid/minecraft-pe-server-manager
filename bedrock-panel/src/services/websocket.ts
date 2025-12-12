@@ -1,15 +1,16 @@
-const { Server: WebSocketServer } = require('ws');
+import { Server as WebSocketServer, WebSocket } from 'ws';
+import { Server } from 'http';
 
-let consoleServer;
-let playerServer;
+let consoleServer: WebSocketServer;
+let playerServer: WebSocketServer;
 
-function initWebSocket(httpServer) {
+export function initWebSocket(httpServer: Server) {
   consoleServer = new WebSocketServer({ noServer: true });
   playerServer = new WebSocketServer({ noServer: true });
 
   httpServer.on('upgrade', (req, socket, head) => {
-    const { pathname } = new URL(req.url, 'http://localhost');
-    const handlers = {
+    const { pathname } = new URL(req.url || '', 'http://localhost');
+    const handlers: { [key: string]: () => void } = {
       '/ws/console': () => {
         consoleServer.handleUpgrade(req, socket, head, (ws) => {
           consoleServer.emit('connection', ws, req);
@@ -27,7 +28,7 @@ function initWebSocket(httpServer) {
       socket.destroy();
       return;
     }
-    handler(req, socket, head);
+    handler();
   });
 
   consoleServer.on('connection', (ws) => {
@@ -39,7 +40,7 @@ function initWebSocket(httpServer) {
   });
 }
 
-function broadcastConsole(message) {
+export function broadcastConsole(message: string) {
   if (!consoleServer) return;
   const payload = JSON.stringify({ type: 'console', message });
   consoleServer.clients.forEach((client) => {
@@ -49,7 +50,7 @@ function broadcastConsole(message) {
   });
 }
 
-function broadcastPlayers(players) {
+export function broadcastPlayers(players: any[]) {
   if (!playerServer) return;
   const payload = JSON.stringify({ type: 'players', players });
   playerServer.clients.forEach((client) => {
@@ -59,7 +60,7 @@ function broadcastPlayers(players) {
   });
 }
 
-module.exports = {
+export default {
   initWebSocket,
   broadcastConsole,
   broadcastPlayers,

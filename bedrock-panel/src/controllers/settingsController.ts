@@ -1,21 +1,22 @@
-const ensureBdsDir = require('../utils/bdsGuard');
-const serverProperties = require('../services/serverProperties');
-const appSettings = require('../services/appSettings');
-const telegramBot = require('../services/telegramBot');
+import { Request, Response } from 'express';
+import ensureBdsDir from '../utils/bdsGuard';
+import serverProperties from '../services/serverProperties';
+import appSettings from '../services/appSettings';
+import telegramBot from '../services/telegramBot';
 
-exports.getSettings = (req, res) => {
+export const getSettings = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
   try {
     const payload = serverProperties.getSettingsSections();
     res.json(payload);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.updateSettings = (req, res) => {
+export const updateSettings = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -25,37 +26,38 @@ exports.updateSettings = (req, res) => {
       message: result.updated.length ? `Updated ${result.updated.length} setting(s).` : 'No changes detected.',
       updated: result.updated,
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
 // Panel / App Settings
-exports.getPanelSettings = (req, res) => {
+export const getPanelSettings = (req: Request, res: Response) => {
   try {
     const settings = appSettings.get();
     res.json(settings);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.updateTelegramSettings = (req, res) => {
+export const updateTelegramSettings = (req: Request, res: Response) => {
   try {
     const config = req.body;
     appSettings.updateTelegram(config);
     telegramBot.reconfigure();
     res.json({ message: 'Telegram settings updated.' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.testTelegramObj = async (req, res) => {
+export const testTelegramObj = async (req: Request, res: Response) => {
   try {
     await telegramBot.sendMessage('Test notification from Bedrock Panel! 🚀');
     res.json({ message: 'Test message sent. Check your telegram.' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
+

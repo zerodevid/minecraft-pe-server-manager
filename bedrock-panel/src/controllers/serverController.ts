@@ -1,14 +1,15 @@
-const fs = require('fs');
-const path = require('path');
-const bedrockProcess = require('../services/bedrockProcess');
-const packManager = require('../services/packManager');
-const worldManager = require('../services/worldManager');
-const { BDS_DIR } = require('../config');
-const ensureBdsDir = require('../utils/bdsGuard');
+import fs from 'fs';
+import path from 'path';
+import { Request, Response } from 'express';
+import bedrockProcess from '../services/bedrockProcess';
+import packManager from '../services/packManager';
+import worldManager from '../services/worldManager';
+import { BDS_DIR } from '../config';
+import ensureBdsDir from '../utils/bdsGuard';
 
 const versionFile = path.join(BDS_DIR, 'version.txt');
 
-function readVersion() {
+function readVersion(): string {
   try {
     return fs.readFileSync(versionFile, 'utf-8').trim();
   } catch (error) {
@@ -16,17 +17,17 @@ function readVersion() {
   }
 }
 
-exports.getStatus = (req, res) => {
+export const getStatus = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
-  const world = req.query.world || worldManager.getActiveWorld();
-  const available = worldManager.listWorlds().map((entry) => entry.name);
+  const world = (req.query.world as string) || worldManager.getActiveWorld();
+  const available = worldManager.listWorlds().map((entry: any) => entry.name);
   if (!available.includes(world)) {
     return res.status(400).json({ message: 'World not found' });
   }
   const packs = packManager.getPacks(world);
-  const enabledPacks = packs.filter((p) => p.enabled).length;
+  const enabledPacks = packs.filter((p: any) => p.enabled).length;
 
   res.json({
     running: bedrockProcess.isRunning(),
@@ -38,7 +39,7 @@ exports.getStatus = (req, res) => {
   });
 };
 
-exports.startServer = (req, res) => {
+export const startServer = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -46,7 +47,7 @@ exports.startServer = (req, res) => {
   if (world) {
     try {
       worldManager.setActiveWorld(world);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(400).json({ message: error.message });
     }
   }
@@ -57,7 +58,7 @@ exports.startServer = (req, res) => {
   return res.json({ message: 'Server starting' });
 };
 
-exports.stopServer = (req, res) => {
+export const stopServer = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -68,7 +69,7 @@ exports.stopServer = (req, res) => {
   return res.json({ message: 'Stop command sent' });
 };
 
-exports.restartServer = async (req, res) => {
+export const restartServer = async (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
     return;
   }
@@ -76,7 +77,7 @@ exports.restartServer = async (req, res) => {
   if (world) {
     try {
       worldManager.setActiveWorld(world);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(400).json({ message: error.message });
     }
   }
@@ -86,3 +87,4 @@ exports.restartServer = async (req, res) => {
   }
   res.json({ message: result.message || 'Server restarted' });
 };
+

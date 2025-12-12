@@ -1,15 +1,27 @@
-const fs = require('fs');
-const path = require('path');
-const { BDS_DIR } = require('../config');
+import fs from 'fs';
+import path from 'path';
+import { BDS_DIR } from '../config';
 
-const BAN_FILE = path.join(BDS_DIR, 'banned-players.json');
+export const BAN_FILE = path.join(BDS_DIR, 'banned-players.json');
 
-function sanitizeText(value) {
+interface BanEntry {
+  name?: string;
+  xuid?: string;
+  [key: string]: any;
+}
+
+interface BanWrapper {
+  type: 'array' | 'object';
+  data?: any;
+  key?: string;
+}
+
+function sanitizeText(value: any) {
   if (value === undefined || value === null) return '';
   return String(value).replace(/[\r\n]/g, ' ').trim();
 }
 
-function readBanPayload() {
+function readBanPayload(): { entries: BanEntry[]; wrapper: BanWrapper } {
   if (!fs.existsSync(BAN_FILE)) {
     return { entries: [], wrapper: { type: 'array' } };
   }
@@ -29,15 +41,15 @@ function readBanPayload() {
       return { entries: parsed[key], wrapper: { type: 'object', key, data: parsed } };
     }
     return { entries: [], wrapper: { type: 'array' } };
-  } catch (error) {
+  } catch (error: any) {
     console.error(`[playerManager] Unable to parse ${BAN_FILE}: ${error.message}`);
     return { entries: [], wrapper: { type: 'array' } };
   }
 }
 
-function writeBanPayload(entries, wrapper) {
+function writeBanPayload(entries: BanEntry[], wrapper: BanWrapper) {
   const normalizedEntries = entries.map((entry) => {
-    const payload = {};
+    const payload: BanEntry = {};
     if (entry?.name) {
       payload.name = sanitizeText(entry.name) || entry.xuid || 'unknown';
     }
@@ -59,7 +71,7 @@ function writeBanPayload(entries, wrapper) {
   fs.writeFileSync(BAN_FILE, JSON.stringify(normalizedEntries, null, 2));
 }
 
-function listBans() {
+export function listBans() {
   const { entries } = readBanPayload();
   return entries.map((entry) => ({
     name: sanitizeText(entry?.name) || 'Unknown',
@@ -67,7 +79,7 @@ function listBans() {
   }));
 }
 
-function upsertBanEntry({ name, xuid }) {
+export function upsertBanEntry({ name, xuid }: { name?: string; xuid?: string }) {
   const safeName = sanitizeText(name);
   const safeXuid = sanitizeText(xuid);
   const { entries, wrapper } = readBanPayload();
@@ -77,7 +89,7 @@ function upsertBanEntry({ name, xuid }) {
     return matchesName || matchesXuid;
   });
 
-  const payload = {
+  const payload: BanEntry = {
     ...(safeName ? { name: safeName } : {}),
     ...(safeXuid ? { xuid: safeXuid } : {}),
   };
@@ -96,12 +108,12 @@ function upsertBanEntry({ name, xuid }) {
   return payload;
 }
 
-function removeBanEntry({ name, xuid }) {
+export function removeBanEntry({ name, xuid }: { name?: string; xuid?: string }) {
   const safeName = sanitizeText(name);
   const safeXuid = sanitizeText(xuid);
   const { entries, wrapper } = readBanPayload();
 
-  let removedEntry = null;
+  let removedEntry: BanEntry | null = null;
   const filtered = entries.filter((entry) => {
     const entryName = sanitizeText(entry?.name);
     const entryXuid = sanitizeText(entry?.xuid);
@@ -122,7 +134,7 @@ function removeBanEntry({ name, xuid }) {
   return { removed: true, entry: removedEntry };
 }
 
-module.exports = {
+export default {
   listBans,
   upsertBanEntry,
   removeBanEntry,

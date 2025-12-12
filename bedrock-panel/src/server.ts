@@ -1,17 +1,18 @@
-const path = require('path');
-const http = require('http');
-const express = require('express');
-const multer = require('multer');
+import path from 'path';
+import http from 'http';
+import fs from 'fs';
+import express, { Request, Response, NextFunction } from 'express';
+import multer from 'multer';
 
-const serverController = require('./controllers/serverController');
-const consoleController = require('./controllers/consoleController');
-const packController = require('./controllers/packController');
-const playerController = require('./controllers/playerController');
-const bedrockProcess = require('./services/bedrockProcess');
-const { initWebSocket, broadcastConsole, broadcastPlayers } = require('./services/websocket');
-const worldController = require('./controllers/worldController');
-const settingsController = require('./controllers/settingsController');
-const { UPLOADS_DIR } = require('./config');
+import * as serverController from './controllers/serverController';
+import * as consoleController from './controllers/consoleController';
+import * as packController from './controllers/packController';
+import * as playerController from './controllers/playerController';
+import bedrockProcess from './services/bedrockProcess';
+import { initWebSocket, broadcastConsole, broadcastPlayers } from './services/websocket';
+import * as worldController from './controllers/worldController';
+import * as settingsController from './controllers/settingsController';
+import { UPLOADS_DIR } from './config';
 
 const app = express();
 const upload = multer({ dest: UPLOADS_DIR });
@@ -19,7 +20,8 @@ const PORT = process.env.PORT || 4000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+// Adjust path to public directory from src/
+app.use(express.static(path.join(__dirname, '../public')));
 
 // API Routes
 app.get('/api/status', serverController.getStatus);
@@ -53,8 +55,24 @@ app.get('/api/settings/panel', settingsController.getPanelSettings);
 app.put('/api/settings/telegram', settingsController.updateTelegramSettings);
 app.post('/api/settings/telegram/test', settingsController.testTelegramObj);
 
+// Root route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+  res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
+});
+
+// Clean URLs handler (serve .html without extension)
+app.get('/:page', (req: Request, res: Response, next: NextFunction) => {
+  const page = req.params.page;
+  if (page.includes('.')) return next();
+
+  const publicDir = path.join(__dirname, '../public');
+  const filePath = path.join(publicDir, `${page}.html`);
+
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    next();
+  }
 });
 
 const server = http.createServer(app);
@@ -73,3 +91,4 @@ server.listen(PORT, () => {
   console.log('Auto-starting Bedrock Server...');
   bedrockProcess.startServer();
 });
+

@@ -1,11 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const AdmZip = require('adm-zip');
-const crypto = require('crypto');
-const worldJson = require('./worldJson');
-const worldManager = require('./worldManager');
-const { copyDirectory } = require('./utils/fsUtils');
-const { ROOT_DIR, BDS_DIR } = require('../config');
+import fs from 'fs';
+import path from 'path';
+import AdmZip from 'adm-zip';
+import crypto from 'crypto';
+import worldJson from './worldJson';
+import worldManager from './worldManager';
+import { copyDirectory } from '../utils/fsUtils';
+import { ROOT_DIR, BDS_DIR } from '../config';
 
 const PACKS_FILE = path.join(ROOT_DIR, 'packs.json');
 const BEHAVIOR_DIR = path.join(BDS_DIR, 'behavior_packs');
@@ -16,7 +16,21 @@ const SCAN_DIRS = [
   { dir: RESOURCE_DIR, type: 'resource' },
 ];
 
-function readPacks() {
+interface Pack {
+  uuid: string;
+  name: string;
+  version: number[];
+  type: string;
+  folder?: string;
+  icon?: string | null;
+  bundleId?: string;
+  dependencies?: string[];
+  enabled?: boolean;
+  enabledWorlds?: string[];
+  iconUrl?: string | null;
+}
+
+function readPacks(): Pack[] {
   try {
     const raw = fs.readFileSync(PACKS_FILE, 'utf-8');
     const packs = JSON.parse(raw);
@@ -28,7 +42,7 @@ function readPacks() {
   }
 }
 
-function writePacks(packs) {
+function writePacks(packs: Pack[]) {
   const sorted = [...packs].sort((a, b) => a.name.localeCompare(b.name));
   const serializable = sorted.map((pack) => {
     const { enabled, ...rest } = pack;
@@ -37,7 +51,7 @@ function writePacks(packs) {
   fs.writeFileSync(PACKS_FILE, JSON.stringify(serializable, null, 2));
 }
 
-function normalizePack(pack) {
+function normalizePack(pack: any): Pack {
   if (!Array.isArray(pack.enabledWorlds)) {
     const defaultEnabled = pack.enabled ? [DEFAULT_WORLD] : [];
     pack.enabledWorlds = defaultEnabled;
@@ -72,8 +86,8 @@ function normalizePack(pack) {
   return pack;
 }
 
-function applyBundleLinks(packs) {
-  const packByUuid = new Map();
+function applyBundleLinks(packs: Pack[]) {
+  const packByUuid = new Map<string, Pack>();
   packs.forEach((pack) => packByUuid.set(pack.uuid, pack));
 
   let changed = true;
@@ -98,7 +112,7 @@ function applyBundleLinks(packs) {
   });
 }
 
-function loadPackManifest(pack) {
+function loadPackManifest(pack: Pack) {
   if (!pack?.folder) return null;
   const manifestPath = path.join(ROOT_DIR, pack.folder, 'manifest.json');
   if (!fs.existsSync(manifestPath)) {
@@ -111,7 +125,7 @@ function loadPackManifest(pack) {
   }
 }
 
-function locateIcon(folderPath) {
+function locateIcon(folderPath: string) {
   const iconFile = path.join(folderPath, 'pack_icon.png');
   if (fs.existsSync(iconFile)) {
     return path.relative(ROOT_DIR, iconFile);
@@ -128,27 +142,27 @@ function slugify(value = '') {
     .replace(/[^a-z0-9_-]/g, '');
 }
 
-function getBundleId(manifest) {
+function getBundleId(manifest: any) {
   return slugify(manifest?.header?.name) || manifest?.header?.uuid || crypto.randomUUID();
 }
 
-function extractDependencies(manifest) {
+function extractDependencies(manifest: any) {
   if (!Array.isArray(manifest?.dependencies)) return [];
   return manifest.dependencies
-    .map((dependency) => dependency?.uuid)
+    .map((dependency: any) => dependency?.uuid)
     .filter(Boolean);
 }
 
-function cleanName(name) {
+function cleanName(name: string) {
   return (name || '').replace(/§./g, '');
 }
 
-function scanDirectoryForPacks(dir, fallbackType) {
+function scanDirectoryForPacks(dir: string, fallbackType: string) {
   if (!fs.existsSync(dir)) {
     return [];
   }
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const packs = [];
+  const packs: Pack[] = [];
   entries.forEach((entry) => {
     if (!entry.isDirectory()) return;
     const folderPath = path.join(dir, entry.name);
@@ -184,25 +198,25 @@ function gatherInstalledPacks() {
 }
 
 function getWorldAssignments() {
-  const worlds = worldManager.listWorlds().map((entry) => entry.name);
-  const assignments = new Map();
+  const worlds = worldManager.listWorlds().map((entry: any) => entry.name);
+  const assignments = new Map<string, Set<string>>();
 
-  worlds.forEach((world) => {
+  worlds.forEach((world: string) => {
     const { behavior, resource } = worldJson.getWorldPackEntries(world);
-    [...behavior, ...resource].forEach((entry) => {
+    [...behavior, ...resource].forEach((entry: any) => {
       if (!entry?.pack_id) return;
       if (!assignments.has(entry.pack_id)) {
         assignments.set(entry.pack_id, new Set());
       }
-      assignments.get(entry.pack_id).add(world);
+      assignments.get(entry.pack_id)!.add(world);
     });
   });
 
   return assignments;
 }
 
-function packsDiffer(existing, incoming) {
-  const basicFields = ['name', 'type', 'folder', 'icon', 'bundleId'];
+function packsDiffer(existing: Pack, incoming: Pack) {
+  const basicFields = ['name', 'type', 'folder', 'icon', 'bundleId'] as const;
   if (basicFields.some((field) => (existing[field] || null) !== (incoming[field] || null))) {
     return true;
   }
@@ -245,7 +259,8 @@ function syncInstalledPacks() {
         ...existing,
         ...diskPack,
         enabledWorlds,
-      };
+      } as Pack;
+
       if (!Array.isArray(merged.dependencies)) {
         merged.dependencies = [];
       }
@@ -271,8 +286,8 @@ function syncInstalledPacks() {
   }
 }
 
-function findManifestFiles(dir) {
-  const result = [];
+function findManifestFiles(dir: string): string[] {
+  const result: string[] = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   entries.forEach((entry) => {
     const entryPath = path.join(dir, entry.name);
@@ -285,7 +300,7 @@ function findManifestFiles(dir) {
   return result;
 }
 
-function getPackType(manifest) {
+function getPackType(manifest: any) {
   const modules = manifest.modules || [];
   const moduleType = modules[0]?.type || '';
   if (moduleType.toLowerCase() === 'resources') {
@@ -297,7 +312,7 @@ function getPackType(manifest) {
   return manifest.header?.min_engine_version ? 'resource' : 'behavior';
 }
 
-function normalizeVersion(version) {
+function normalizeVersion(version: any) {
   if (Array.isArray(version)) {
     return version;
   }
@@ -307,7 +322,7 @@ function normalizeVersion(version) {
   return [1, 0, 0];
 }
 
-function validateManifest(manifest) {
+function validateManifest(manifest: any) {
   if (!manifest?.header?.name || !manifest?.header?.uuid) {
     throw new Error('Invalid manifest.json: missing header information');
   }
@@ -316,7 +331,7 @@ function validateManifest(manifest) {
   }
 }
 
-function findTargets(packs, { uuid, bundleId }) {
+function findTargets(packs: Pack[], { uuid, bundleId }: { uuid?: string; bundleId?: string }) {
   if (bundleId) {
     const matches = packs.filter((pack) => pack.bundleId === bundleId);
     if (!matches.length) {
@@ -331,13 +346,12 @@ function findTargets(packs, { uuid, bundleId }) {
   return packs.filter((p) => p.bundleId === pack.bundleId);
 }
 
-async function installPack(uploadPath) {
-  let extractDir;
+export async function installPack(uploadPath: string) {
+  const extractDir = path.join(path.dirname(uploadPath), `extract_${Date.now()}`);
   try {
     ensureSyncedPacks();
 
     const zip = new AdmZip(uploadPath);
-    extractDir = path.join(path.dirname(uploadPath), `extract_${Date.now()}`);
     fs.rmSync(extractDir, { recursive: true, force: true });
     fs.mkdirSync(extractDir, { recursive: true });
     zip.extractAllTo(extractDir, true);
@@ -361,13 +375,13 @@ async function installPack(uploadPath) {
       const dependencies = extractDependencies(manifest);
 
       const dependencyMatch = dependencies
-        .map((depUuid) => packs.find((p) => p.uuid === depUuid))
+        .map((depUuid: string) => packs.find((p) => p.uuid === depUuid))
         .find(Boolean);
       const bundleId = dependencyMatch?.bundleId || getBundleId(manifest);
 
       copyDirectory(packRoot, destination);
 
-      const packData = {
+      const packData: Pack = {
         uuid,
         name: cleanName(manifest.header?.name) || 'Unknown Pack',
         version,
@@ -401,7 +415,7 @@ async function installPack(uploadPath) {
   }
 }
 
-function getIconData(iconPath) {
+function getIconData(iconPath?: string | null) {
   if (!iconPath) return null;
   const absolute = path.isAbsolute(iconPath) ? iconPath : path.join(ROOT_DIR, iconPath);
   if (!fs.existsSync(absolute)) return null;
@@ -410,16 +424,16 @@ function getIconData(iconPath) {
   return `data:image/png;base64,${base64}`;
 }
 
-function getPacks(world = DEFAULT_WORLD) {
+export function getPacks(world = DEFAULT_WORLD) {
   ensureSyncedPacks();
   return readPacks().map((pack) => ({
     ...pack,
     iconUrl: getIconData(pack.icon),
-    enabled: pack.enabledWorlds.includes(world),
+    enabled: pack.enabledWorlds?.includes(world) ?? false,
   }));
 }
 
-function updatePackState({ uuid, bundleId, enabled, world = DEFAULT_WORLD }) {
+function updatePackState({ uuid, bundleId, enabled, world = DEFAULT_WORLD }: any) {
   ensureSyncedPacks();
   const packs = readPacks();
   const targets = findTargets(packs, { uuid, bundleId });
@@ -441,19 +455,19 @@ function updatePackState({ uuid, bundleId, enabled, world = DEFAULT_WORLD }) {
   return targets;
 }
 
-function enablePack({ uuid, world, bundleId }) {
+export function enablePack({ uuid, world, bundleId }: any) {
   return updatePackState({ uuid, world, bundleId, enabled: true });
 }
 
-function disablePack({ uuid, world, bundleId }) {
+export function disablePack({ uuid, world, bundleId }: any) {
   return updatePackState({ uuid, world, bundleId, enabled: false });
 }
 
-function removePack({ uuid, bundleId }) {
+export function removePack({ uuid, bundleId }: any) {
   ensureSyncedPacks();
   const packs = readPacks();
   const targets = findTargets(packs, { uuid, bundleId });
-  const remaining = [];
+  const remaining: Pack[] = [];
   packs.forEach((pack) => {
     if (targets.includes(pack)) {
       if (pack.folder) {
@@ -465,8 +479,8 @@ function removePack({ uuid, bundleId }) {
   });
 
   writePacks(remaining);
-  const worlds = worldManager.listWorlds().map((world) => world.name);
-  worlds.forEach((world) => worldJson.syncWorldFiles(remaining, world));
+  const worlds = worldManager.listWorlds().map((world: any) => world.name);
+  worlds.forEach((world: string) => worldJson.syncWorldFiles(remaining, world));
   const activeWorld = worldManager.getActiveWorld();
   if (activeWorld) {
     worldJson.applyWorldToRoot(activeWorld);
@@ -474,7 +488,7 @@ function removePack({ uuid, bundleId }) {
   return targets;
 }
 
-module.exports = {
+export default {
   installPack,
   getPacks,
   enablePack,

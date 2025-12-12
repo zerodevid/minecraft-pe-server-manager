@@ -1,13 +1,14 @@
-const fs = require('fs');
-const path = require('path');
-const AdmZip = require('adm-zip');
-const worldJson = require('./worldJson');
-const { copyDirectory } = require('./utils/fsUtils');
-const { ROOT_DIR, BDS_DIR, WORLDS_DIR, UPLOADS_DIR } = require('../config');
-const SERVER_PROPERTIES = path.join(BDS_DIR, 'server.properties');
-const DEFAULT_WORLD = 'world';
+import fs from 'fs';
+import path from 'path';
+import AdmZip from 'adm-zip';
+import worldJson from './worldJson';
+import { copyDirectory } from '../utils/fsUtils';
+import { ROOT_DIR, BDS_DIR, WORLDS_DIR, UPLOADS_DIR } from '../config';
 
-function sanitizeWorldName(name) {
+const SERVER_PROPERTIES = path.join(BDS_DIR, 'server.properties');
+export const DEFAULT_WORLD = 'world';
+
+function sanitizeWorldName(name: string) {
   return name.replace(/[^a-zA-Z0-9-_]/g, '_') || DEFAULT_WORLD;
 }
 
@@ -17,7 +18,7 @@ function ensureDefaultWorld() {
   worldJson.ensureWorldPackFiles(DEFAULT_WORLD);
 }
 
-function listWorlds() {
+export function listWorlds() {
   ensureDefaultWorld();
   const entries = fs.readdirSync(WORLDS_DIR, { withFileTypes: true });
   return entries
@@ -32,7 +33,7 @@ function listWorlds() {
     });
 }
 
-function getActiveWorld() {
+export function getActiveWorld() {
   try {
     const data = fs.readFileSync(SERVER_PROPERTIES, 'utf-8');
     const levelLine = data.split(/\r?\n/).find((line) => line.startsWith('level-name='));
@@ -46,7 +47,7 @@ function getActiveWorld() {
   return DEFAULT_WORLD;
 }
 
-function setActiveWorld(world) {
+export function setActiveWorld(world: string) {
   const available = listWorlds().map((entry) => entry.name);
   if (!available.includes(world)) {
     throw new Error('World not found');
@@ -77,7 +78,7 @@ function setActiveWorld(world) {
   return world;
 }
 
-async function importWorld(uploadPath) {
+export async function importWorld(uploadPath: string) {
   ensureDefaultWorld();
   const tempDir = path.join(path.dirname(uploadPath), `world_${Date.now()}`);
   fs.rmSync(tempDir, { recursive: true, force: true });
@@ -114,11 +115,11 @@ async function importWorld(uploadPath) {
     return { name: worldName, path: path.relative(ROOT_DIR, destination) };
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
-    await fs.promises.unlink(uploadPath).catch(() => {});
+    await fs.promises.unlink(uploadPath).catch(() => { });
   }
 }
 
-function deleteWorld(name) {
+export function deleteWorld(name: string) {
   ensureDefaultWorld();
   if (!name) {
     throw new Error('World name is required');
@@ -140,7 +141,7 @@ function deleteWorld(name) {
   return { deleted: name, activeWorld: newActive };
 }
 
-function backupWorld(name) {
+export function backupWorld(name: string) {
   ensureDefaultWorld();
   if (!name) {
     throw new Error('World name is required');
@@ -158,7 +159,7 @@ function backupWorld(name) {
   return { filename, filePath };
 }
 
-module.exports = {
+export default {
   listWorlds,
   getActiveWorld,
   setActiveWorld,

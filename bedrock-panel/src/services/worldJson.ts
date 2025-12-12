@@ -1,9 +1,13 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { BDS_DIR, WORLDS_DIR } from '../config';
 
-const { BDS_DIR, WORLDS_DIR } = require('../config');
+interface PackEntry {
+  pack_id: string;
+  version: number[];
+}
 
-function getWorldPaths(world) {
+function getWorldPaths(world: string) {
   const worldDir = path.join(WORLDS_DIR, world);
   return {
     dir: worldDir,
@@ -12,16 +16,16 @@ function getWorldPaths(world) {
   };
 }
 
-function ensureDir(filePath) {
+function ensureDir(filePath: string) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 }
 
-function writeJson(filePath, data) {
+function writeJson(filePath: string, data: any) {
   ensureDir(filePath);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-function ensureWorldPackFiles(world) {
+export function ensureWorldPackFiles(world: string) {
   if (!world) return;
   const { behavior, resource } = getWorldPaths(world);
   ensureDir(behavior);
@@ -34,14 +38,14 @@ function ensureWorldPackFiles(world) {
   }
 }
 
-function buildPackPayload(packs, world, type) {
+function buildPackPayload(packs: any[], world: string, type: string) {
   return packs
     .filter((p) => Array.isArray(p.enabledWorlds) && p.enabledWorlds.includes(world) && p.type === type)
     .map((p) => ({ pack_id: p.uuid, version: p.version || [1, 0, 0] }))
     .sort((a, b) => a.pack_id.localeCompare(b.pack_id));
 }
 
-function syncWorldFiles(packs, world) {
+export function syncWorldFiles(packs: any[], world: string) {
   if (!world) return;
   ensureWorldPackFiles(world);
   const { behavior, resource } = getWorldPaths(world);
@@ -51,7 +55,7 @@ function syncWorldFiles(packs, world) {
   writeJson(resource, resourcePayload);
 }
 
-function applyWorldToRoot(world) {
+export function applyWorldToRoot(world: string) {
   if (!world) return;
   ensureWorldPackFiles(world);
   const { behavior, resource } = getWorldPaths(world);
@@ -61,19 +65,19 @@ function applyWorldToRoot(world) {
   fs.copyFileSync(resource, rootResource);
 }
 
-function readJson(filePath) {
+function readJson(filePath: string): PackEntry[] {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(content);
   } catch (error) {
     if (error instanceof SyntaxError) {
-      console.error(`[WorldJson] Failed to parse JSON at ${filePath}:`, error.message);
+      console.error(`[WorldJson] Failed to parse JSON at ${filePath}:`, (error as Error).message);
     }
     return [];
   }
 }
 
-function getWorldPackEntries(world) {
+export function getWorldPackEntries(world: string) {
   if (!world) return { behavior: [], resource: [] };
   ensureWorldPackFiles(world);
   const { behavior, resource } = getWorldPaths(world);
@@ -83,7 +87,7 @@ function getWorldPackEntries(world) {
   };
 }
 
-module.exports = {
+export default {
   syncWorldFiles,
   ensureWorldPackFiles,
   applyWorldToRoot,

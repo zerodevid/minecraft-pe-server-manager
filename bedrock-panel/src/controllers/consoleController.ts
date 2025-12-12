@@ -1,6 +1,7 @@
-const bedrockProcess = require('../services/bedrockProcess');
+import { Request, Response } from 'express';
+import bedrockProcess from '../services/bedrockProcess';
 
-exports.sendCommand = (req, res) => {
+export const sendCommand = (req: Request, res: Response) => {
   const { command } = req.body;
   if (!command) {
     return res.status(400).json({ message: 'Command is required' });

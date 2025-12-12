@@ -1,8 +1,13 @@
-const TelegramBot = require('node-telegram-bot-api');
-const appSettings = require('./appSettings');
-const bedrockProcess = require('./bedrockProcess');
+import TelegramBot from 'node-telegram-bot-api';
+import appSettings from './appSettings';
+import bedrockProcess, { Player } from './bedrockProcess';
 
 class TelegramService {
+    private bot: TelegramBot | null;
+    private config: any;
+    private lastPlayers: Player[];
+    private hourlyInterval: NodeJS.Timeout | null;
+
     constructor() {
         this.bot = null;
         this.config = appSettings.getTelegram();
@@ -34,6 +39,8 @@ class TelegramService {
     }
 
     setupMessageListener() {
+        if (!this.bot) return;
+
         this.bot.on('message', async (msg) => {
             // Security: Only allow configured Chat ID
             if (String(msg.chat.id) !== String(this.config.chatId)) {
@@ -168,7 +175,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         this.config = appSettings.getTelegram();
         if (this.config.enabled && this.config.botToken && this.config.chatId) {
             this.initBot();
-            this.sendMessage('Telegram notifications have been updated and re-enabled.').catch(() => {});
+            this.sendMessage('Telegram notifications have been updated and re-enabled.').catch(() => { });
         } else {
             this.stopBot();
         }
@@ -178,7 +185,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         if (this.bot) {
             try {
                 this.bot.stopPolling();
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Failed to stop Telegram bot polling:', err.message);
             }
             this.bot = null;
@@ -189,7 +196,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         }
     }
 
-    sendMessage(text) {
+    sendMessage(text: string) {
         if (!this.config.enabled) {
             return Promise.reject(new Error('Telegram notifications are disabled.'));
         }
@@ -209,19 +216,19 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         // Server Status Events
         bedrockProcess.on('status', (status) => {
             if (status === 'running' && this.config.events.serverStart) {
-                this.sendMessage('🟢 **Server Started**\nThe Minecraft server is now online.').catch(() => {});
+                this.sendMessage('🟢 **Server Started**\nThe Minecraft server is now online.').catch(() => { });
             } else if (status === 'stopped' && this.config.events.serverStop) {
-                this.sendMessage('🔴 **Server Stopped**\nThe Minecraft server has stopped.').catch(() => {});
+                this.sendMessage('🔴 **Server Stopped**\nThe Minecraft server has stopped.').catch(() => { });
             }
         });
 
         // Player Events (Diffing)
-        bedrockProcess.on('players', (currentPlayers) => {
+        bedrockProcess.on('players', (currentPlayers: Player[]) => {
             // Check for joins
             const joined = currentPlayers.filter(p => !this.lastPlayers.find(lp => lp.xuid === p.xuid));
             joined.forEach(p => {
                 if (this.config.events.playerJoin) {
-                    this.sendMessage(`👤 **Player Joined**\n${p.name} has joined the game.`).catch(() => {});
+                    this.sendMessage(`👤 **Player Joined**\n${p.name} has joined the game.`).catch(() => { });
                 }
             });
 
@@ -229,7 +236,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
             const left = this.lastPlayers.filter(lp => !currentPlayers.find(p => p.xuid === lp.xuid));
             left.forEach(p => {
                 if (this.config.events.playerLeave) {
-                    this.sendMessage(`👋 **Player Left**\n${p.name} has left the game.`).catch(() => {});
+                    this.sendMessage(`👋 **Player Left**\n${p.name} has left the game.`).catch(() => { });
                 }
             });
 
@@ -244,7 +251,7 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
                 // Let's look for "Banned" keyword or "Unbanned".
                 // Based on simple bedrock behavior, it might be "Banned Name".
                 if (line.includes('Banned') && !line.includes('Function')) { // Avoid debugging noise
-                    this.sendMessage(`🚫 **Ban Event Detected**\nLog: ${line}`).catch(() => {});
+                    this.sendMessage(`🚫 **Ban Event Detected**\nLog: ${line}`).catch(() => { });
                 }
             }
         });
@@ -265,9 +272,9 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
             msg += `Players: ${players.length}\n`;
             msg += `RAM Usage (Panel): ${memUsage.toFixed(2)} MB`;
 
-            this.sendMessage(msg).catch(() => {});
+            this.sendMessage(msg).catch(() => { });
         }, 3600000); // 1 hour
     }
 }
 
-module.exports = new TelegramService();
+export default new TelegramService();

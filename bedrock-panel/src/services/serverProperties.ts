@@ -1,10 +1,38 @@
-const fs = require('fs');
-const path = require('path');
-const { BDS_DIR } = require('../config');
+import fs from 'fs';
+import path from 'path';
+import { BDS_DIR } from '../config';
 
 const SERVER_PROPERTIES = path.join(BDS_DIR, 'server.properties');
 
-const PROPERTY_DEFINITIONS = [
+interface PropertyOption {
+  label: string;
+  value: string;
+}
+
+interface PropertyDefinition {
+  key: string;
+  label: string;
+  description: string;
+  input: string;
+  valueType: 'string' | 'number' | 'boolean';
+  section: string;
+  placeholder?: string;
+  defaultValue?: any;
+  min?: number;
+  max?: number;
+  allowEmpty?: boolean;
+  maxLength?: number;
+  options?: PropertyOption[];
+}
+
+interface PropertySection {
+  id: string;
+  title: string;
+  description: string;
+  fields: string[];
+}
+
+const PROPERTY_DEFINITIONS: PropertyDefinition[] = [
   {
     key: 'server-name',
     label: 'Server Name / MOTD',
@@ -257,7 +285,7 @@ const PROPERTY_DEFINITIONS = [
   },
 ];
 
-const PROPERTY_SECTIONS = [
+const PROPERTY_SECTIONS: PropertySection[] = [
   {
     id: 'identity',
     title: 'Server Identity & Access',
@@ -315,9 +343,9 @@ function ensurePropertiesFile() {
   }
 }
 
-function parsePropertiesFile(content) {
-  const entries = {};
-  const layout = [];
+function parsePropertiesFile(content: string) {
+  const entries: { [key: string]: string } = {};
+  const layout: { raw: string; key?: string }[] = [];
   const lines = content.split(/\r?\n/);
 
   lines.forEach((line) => {
@@ -336,7 +364,7 @@ function parsePropertiesFile(content) {
   return { entries, layout };
 }
 
-function formatBoolean(value) {
+function formatBoolean(value: any) {
   if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase();
     if (['true', '1', 'yes', 'on'].includes(normalized)) {
@@ -349,7 +377,7 @@ function formatBoolean(value) {
   return value ? 'true' : 'false';
 }
 
-function formatNumber(def, value) {
+function formatNumber(def: PropertyDefinition, value: any) {
   if (value === undefined || value === null || value === '') {
     throw new Error(`${def.label} is required.`);
   }
@@ -366,7 +394,7 @@ function formatNumber(def, value) {
   return String(Math.trunc(number));
 }
 
-function formatString(def, value) {
+function formatString(def: PropertyDefinition, value: any) {
   if ((value === undefined || value === null || value === '') && !def.allowEmpty) {
     throw new Error(`${def.label} cannot be empty.`);
   }
@@ -390,7 +418,7 @@ function formatString(def, value) {
   return stringValue;
 }
 
-function serializeEntries(entries, layout) {
+function serializeEntries(entries: { [key: string]: string }, layout: { raw: string; key?: string }[]) {
   const used = new Set();
   const lines = layout.map((line) => {
     if (!line.key) {
@@ -412,7 +440,7 @@ function serializeEntries(entries, layout) {
   return lines.join('\n');
 }
 
-function parseValueForResponse(def, rawValue) {
+function parseValueForResponse(def: PropertyDefinition, rawValue: string) {
   if (def.valueType === 'boolean') {
     if (rawValue === undefined) {
       return !!def.defaultValue;
@@ -434,7 +462,7 @@ function parseValueForResponse(def, rawValue) {
   return rawValue;
 }
 
-function formatValueForFile(def, value) {
+function formatValueForFile(def: PropertyDefinition, value: any) {
   if (!definitionMap.has(def.key)) {
     throw new Error(`Unknown property: ${def.key}`);
   }
@@ -456,7 +484,7 @@ function readProperties() {
   return parsePropertiesFile(raw);
 }
 
-function getSettingsSections() {
+export function getSettingsSections() {
   const { entries } = readProperties();
   const sections = PROPERTY_SECTIONS.map((section) => ({
     ...section,
@@ -482,13 +510,13 @@ function getSettingsSections() {
   return { sections };
 }
 
-function updateSettings(payload = {}) {
+export function updateSettings(payload: { [key: string]: any } = {}) {
   if (!payload || typeof payload !== 'object') {
     throw new Error('No settings supplied.');
   }
 
   const { entries, layout } = readProperties();
-  const updatedKeys = [];
+  const updatedKeys: string[] = [];
 
   Object.entries(payload).forEach(([key, value]) => {
     const def = definitionMap.get(key);
@@ -511,7 +539,7 @@ function updateSettings(payload = {}) {
   return { updated: updatedKeys };
 }
 
-module.exports = {
+export default {
   getSettingsSections,
   updateSettings,
 };

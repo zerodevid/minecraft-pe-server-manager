@@ -1,8 +1,22 @@
-const { spawn } = require('child_process');
-const EventEmitter = require('events');
-const { BDS_DIR } = require('../config');
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
+import EventEmitter from 'events';
+import { BDS_DIR } from '../config';
+
+export interface Player {
+  name: string;
+  xuid: string;
+  gamemode: string;
+  ping: number;
+}
 
 class BedrockProcess extends EventEmitter {
+  private proc: ChildProcessWithoutNullStreams | null;
+  private status: string;
+  private players: Map<string, Player>;
+  private autoRestart: boolean;
+  private isStopping: boolean;
+  private restartTimeout: NodeJS.Timeout | null;
+
   constructor() {
     super();
     this.proc = null;
@@ -10,6 +24,7 @@ class BedrockProcess extends EventEmitter {
     this.players = new Map();
     this.autoRestart = true;
     this.isStopping = false;
+    this.restartTimeout = null;
   }
 
   isRunning() {
@@ -32,7 +47,7 @@ class BedrockProcess extends EventEmitter {
     try {
       this.isStopping = false;
       this.proc = spawn('./bedrock_server', { cwd: BDS_DIR });
-    } catch (error) {
+    } catch (error: any) {
       this.status = 'error';
       this.emit('output', `Failed to start server: ${error.message}`);
       return { started: false, message: error.message };
@@ -81,7 +96,7 @@ class BedrockProcess extends EventEmitter {
       this.restartTimeout = null;
     }
 
-    if (!this.isRunning()) {
+    if (!this.isRunning() || !this.proc) {
       return { stopped: false, message: 'Server not running' };
     }
 
@@ -96,7 +111,7 @@ class BedrockProcess extends EventEmitter {
     return { stopped: true };
   }
 
-  async restartServer() {
+  async restartServer(): Promise<{ restarted: boolean; message?: string }> {
     if (!this.isRunning()) {
       const result = this.startServer();
       if (!result.started) {
@@ -106,8 +121,12 @@ class BedrockProcess extends EventEmitter {
     }
 
     await new Promise((resolve) => {
-      this.proc.once('close', resolve);
-      this.stopServer();
+      if (this.proc) {
+        this.proc.once('close', resolve);
+        this.stopServer();
+      } else {
+        resolve(null);
+      }
     });
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -118,20 +137,20 @@ class BedrockProcess extends EventEmitter {
     return { restarted: true };
   }
 
-  sendCommand(command) {
-    if (!this.isRunning()) {
+  sendCommand(command: string) {
+    if (!this.isRunning() || !this.proc) {
       return { sent: false, message: 'Server not running' };
     }
 
     try {
       this.proc.stdin.write(`${command}\n`);
-    } catch (error) {
+    } catch (error: any) {
       return { sent: false, message: error.message };
     }
     return { sent: true };
   }
 
-  trackPlayers(text) {
+  trackPlayers(text: string) {
     const lines = text.split(/\r?\n/).filter(Boolean);
     lines.forEach((line) => {
       const joinMatch = line.match(/Player (?:connected|Connected):\s*([^,]+),\s*xuid:\s*(\d+)/i);
@@ -169,4 +188,4 @@ class BedrockProcess extends EventEmitter {
   }
 }
 
-module.exports = new BedrockProcess();
+export default new BedrockProcess();
