@@ -21,19 +21,22 @@
           <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/packs.html">Packs</a>
           <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/upload.html">Upload Pack</a>
           <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/worlds.html">Worlds</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/settings.html">Settings</a>
         </nav>
       </aside>
       <main class="flex-1 p-8 space-y-6">
         <header>
           <h2 class="text-2xl font-semibold">Online Players</h2>
-          <p class="text-slate-400 text-sm">Live list of connected players.</p>
+          <p class="text-slate-400 text-sm">Monitor players, kick griefers, or ban/unban without touching the console.</p>
           <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
             <label class="text-slate-400" for="world-select">World</label>
             <select id="world-select" class="bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 min-w-[160px]"></select>
             <a class="text-indigo-400 text-xs hover:underline" href="/worlds.html">Manage worlds</a>
           </div>
         </header>
-        <section class="bg-slate-900 rounded-xl shadow">
+        <section class="bg-slate-900 rounded-xl shadow space-y-4">
+          <p class="text-xs uppercase text-slate-400 tracking-wide px-6 pt-6">Online Now</p>
+          <p class="text-sm text-slate-400 px-6" id="player-feedback"></p>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-800">
               <thead class="bg-slate-800 text-xs uppercase text-slate-400">
@@ -42,11 +45,40 @@
                   <th class="px-4 py-3 text-left">XUID</th>
                   <th class="px-4 py-3 text-left">Gamemode</th>
                   <th class="px-4 py-3 text-left">Ping</th>
+                  <th class="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody id="player-table" class="divide-y divide-slate-800 text-sm">
                 <tr>
-                  <td colspan="4" class="px-4 py-6 text-center text-slate-500">Waiting for data...</td>
+                  <td colspan="5" class="px-4 py-6 text-center text-slate-500">Waiting for data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section class="bg-slate-900 rounded-xl shadow space-y-4 p-6">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-semibold">Ban List</h3>
+              <p class="text-slate-400 text-sm">Players here cannot join until you unban them.</p>
+            </div>
+            <button id="refresh-bans" class="px-3 py-2 rounded bg-slate-800 text-sm text-white hover:bg-slate-700">
+              Refresh
+            </button>
+          </div>
+          <p class="text-sm text-slate-400" id="ban-list-status"></p>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-800 text-sm">
+              <thead class="bg-slate-800 text-xs uppercase text-slate-400">
+                <tr>
+                  <th class="px-4 py-3 text-left">Player</th>
+                  <th class="px-4 py-3 text-left">XUID</th>
+                  <th class="px-4 py-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ban-table" class="divide-y divide-slate-800">
+                <tr>
+                  <td colspan="3" class="px-4 py-6 text-center text-slate-500">Loading ban list...</td>
                 </tr>
               </tbody>
             </table>

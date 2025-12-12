@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bedrock Panel · Settings</title>
+    <link rel="stylesheet" href="/css/tailwind.css" />
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="min-h-screen flex">
+      <aside class="w-64 bg-slate-900 p-6 space-y-8">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-slate-400">Bedrock</p>
+          <h1 class="text-xl font-semibold">Server Panel</h1>
+        </div>
+        <nav class="space-y-2 text-sm font-medium">
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/dashboard.html">Dashboard</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/console.html">Console</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/players.html">Players</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/packs.html">Packs</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/upload.html">Upload Pack</a>
+          <a class="block px-3 py-2 rounded hover:bg-slate-800" href="/worlds.html">Worlds</a>
+          <a class="block px-3 py-2 rounded bg-indigo-600 text-white" href="/settings.html">Settings</a>
+        </nav>
+      </aside>
+      <main class="flex-1 p-8 space-y-8">
+        <header class="max-w-3xl space-y-3">
+          <h2 class="text-2xl font-semibold">Server Settings</h2>
+          <p class="text-slate-400 text-sm">
+            Update the most common <code class="text-xs bg-slate-800 px-1 rounded">server.properties</code> options such as game mode,
+            difficulty, max players, and connection details without editing files manually.
+          </p>
+        </header>
+        <section class="bg-slate-900 rounded-xl p-6 shadow space-y-6">
+          <div id="settings-form" class="space-y-6">
+            <p class="text-slate-500 text-sm">Loading settings...</p>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-4">
+            <p class="text-sm text-slate-400" id="settings-feedback"></p>
+            <button id="save-settings" class="px-4 py-2 rounded bg-indigo-600 text-white disabled:opacity-50">
+              Save Settings
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/js/settings.js"></script>
+  </body>
+</html>

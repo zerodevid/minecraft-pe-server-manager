@@ -8,6 +8,8 @@ class BedrockProcess extends EventEmitter {
     this.proc = null;
     this.status = 'stopped';
     this.players = new Map();
+    this.autoRestart = true;
+    this.isStopping = false;
   }
 
   isRunning() {
@@ -28,6 +30,7 @@ class BedrockProcess extends EventEmitter {
     }
 
     try {
+      this.isStopping = false;
       this.proc = spawn('./bedrock_server', { cwd: BDS_DIR });
     } catch (error) {
       this.status = 'error';
@@ -52,23 +55,38 @@ class BedrockProcess extends EventEmitter {
       this.emit('output', `Process error: ${err.message}`);
     });
 
-    this.proc.on('close', () => {
+    this.proc.on('close', (code) => {
       this.status = 'stopped';
       this.proc = null;
       this.players.clear();
       this.emit('status', this.status);
       this.emit('players', this.getPlayers());
+      this.emit('output', `[Process] Server stopped with code ${code}`);
+
+      if (!this.isStopping && this.autoRestart) {
+        this.emit('output', '[Process] Server crashed or stopped unexpectedly. Restarting in 5 seconds...');
+        this.restartTimeout = setTimeout(() => {
+          this.startServer();
+        }, 5000);
+      }
+      this.isStopping = false;
     });
 
     return { started: true };
   }
 
   stopServer() {
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
+
     if (!this.isRunning()) {
       return { stopped: false, message: 'Server not running' };
     }
 
     this.status = 'stopping';
+    this.isStopping = true;
     this.emit('status', this.status);
     try {
       this.proc.stdin.write('stop\n');

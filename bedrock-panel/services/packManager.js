@@ -139,6 +139,10 @@ function extractDependencies(manifest) {
     .filter(Boolean);
 }
 
+function cleanName(name) {
+  return (name || '').replace(/§./g, '');
+}
+
 function scanDirectoryForPacks(dir, fallbackType) {
   if (!fs.existsSync(dir)) {
     return [];
@@ -160,7 +164,7 @@ function scanDirectoryForPacks(dir, fallbackType) {
       const uuid = manifest.header?.uuid || manifest.modules?.[0]?.uuid || entry.name;
       packs.push({
         uuid,
-        name: manifest.header?.name || 'Unknown Pack',
+        name: cleanName(manifest.header?.name) || 'Unknown Pack',
         version,
         type,
         folder: path.relative(ROOT_DIR, folderPath),
@@ -365,7 +369,7 @@ async function installPack(uploadPath) {
 
       const packData = {
         uuid,
-        name: manifest.header?.name || 'Unknown Pack',
+        name: cleanName(manifest.header?.name) || 'Unknown Pack',
         version,
         type,
         enabled: false,
