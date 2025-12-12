@@ -3,6 +3,7 @@ import ensureBdsDir from '../utils/bdsGuard';
 import serverProperties from '../services/serverProperties';
 import appSettings from '../services/appSettings';
 import telegramBot from '../services/telegramBot';
+import authService from '../services/authService';
 
 export const getSettings = (req: Request, res: Response) => {
   if (!ensureBdsDir(res)) {
@@ -61,3 +62,20 @@ export const testTelegramObj = async (req: Request, res: Response) => {
   }
 };
 
+export const getAuthSettings = (_req: Request, res: Response) => {
+  try {
+    res.json(authService.getPublicConfig());
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateAuthSettings = (req: Request, res: Response) => {
+  const { username, password } = req.body || {};
+  try {
+    const result = authService.updateCredentials({ username, password });
+    res.json({ message: 'Login credentials updated.', username: result.username });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

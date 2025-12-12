@@ -13,6 +13,10 @@ const listStatusEl = document.getElementById('world-list-status');
 const fileInput = document.getElementById('world-file');
 const importBtn = document.getElementById('import-world-btn');
 const importStatusEl = document.getElementById('world-import-status');
+const dropzone = document.getElementById('world-dropzone');
+const dropLabel = document.getElementById('world-dropzone-label');
+const worldIconPlaceholder = '/images/world-placeholder.svg';
+let selectedWorldFile = null;
 
 initWorldSelector(worldSelect).then(renderWorlds);
 
@@ -35,10 +39,12 @@ async function renderWorlds() {
 
 function worldCard(world, activeWorld) {
   const isActive = world.name === activeWorld;
+  const iconUrl = `/api/worlds/${encodeURIComponent(world.name)}/icon`;
   return `
     <article class="bg-slate-800 rounded-lg p-5 border border-slate-700 space-y-3" data-world="${world.name}">
-      <div class="flex items-center justify-between">
-        <div>
+      <div class="flex items-center gap-4">
+        <img src="${iconUrl}" alt="${world.name} icon" loading="lazy" class="w-16 h-16 rounded-lg border border-slate-700 object-cover bg-slate-900" data-world-icon="${world.name}" />
+        <div class="flex-1">
           <h4 class="font-semibold">${world.name}</h4>
           <p class="text-xs text-slate-400">${world.path}</p>
         </div>
@@ -127,15 +133,63 @@ listEl?.addEventListener('click', async (event) => {
   }
 });
 
-fileInput?.addEventListener('change', () => {
-  importBtn.disabled = !fileInput.files.length;
-  importStatusEl.textContent = '';
+listEl?.addEventListener(
+  'error',
+  (event) => {
+    const target = event.target;
+    if (target instanceof HTMLImageElement && target.dataset.worldIcon && !target.dataset.fallbackApplied) {
+      target.dataset.fallbackApplied = '1';
+      target.src = worldIconPlaceholder;
+    }
+  },
+  true
+);
+
+function setWorldUploadFile(file) {
+  selectedWorldFile = file;
+  if (dropLabel) {
+    dropLabel.textContent = file ? file.name : 'Drag & drop your world .zip here';
+  }
+  if (importBtn) {
+    importBtn.disabled = !file;
+  }
+  if (importStatusEl && !file) {
+    importStatusEl.textContent = '';
+  }
+}
+
+dropzone?.addEventListener('click', () => fileInput?.click());
+
+fileInput?.addEventListener('change', (event) => {
+  const file = event.target.files?.[0];
+  setWorldUploadFile(file || null);
+});
+
+dropzone?.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  dropzone.classList.add('border-indigo-500');
+});
+
+dropzone?.addEventListener('dragleave', () => {
+  dropzone.classList.remove('border-indigo-500');
+});
+
+dropzone?.addEventListener('drop', (event) => {
+  event.preventDefault();
+  dropzone.classList.remove('border-indigo-500');
+  const file = event.dataTransfer?.files?.[0];
+  if (file) {
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    setWorldUploadFile(file);
+  }
 });
 
 importBtn?.addEventListener('click', async () => {
-  if (!fileInput.files.length) return;
+  if (!selectedWorldFile) return;
   const form = new FormData();
-  form.append('world', fileInput.files[0]);
+  form.append('world', selectedWorldFile);
   importBtn.disabled = true;
   importStatusEl.textContent = 'Importing world...';
 
@@ -149,7 +203,10 @@ importBtn?.addEventListener('click', async () => {
       throw new Error(data.message || 'Import failed');
     }
     importStatusEl.textContent = `World "${data.name}" imported.`;
-    fileInput.value = '';
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    setWorldUploadFile(null);
     selectWorld(data.name);
     listStatusEl.textContent = `World "${data.name}" ready for configuration.`;
     await refreshWorldSelector(worldSelect);

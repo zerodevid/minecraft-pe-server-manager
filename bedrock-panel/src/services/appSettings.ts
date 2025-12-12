@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ROOT_DIR } from '../config';
+import { hashPassword } from '../utils/hash';
 
 const SETTINGS_FILE = path.join(ROOT_DIR, 'panel-settings.json');
 
@@ -19,8 +20,14 @@ interface TelegramConfig {
     };
 }
 
+interface AuthConfig {
+    username: string;
+    passwordHash: string;
+}
+
 interface Settings {
     telegram: TelegramConfig;
+    auth: AuthConfig;
     [key: string]: any;
 }
 
@@ -37,6 +44,10 @@ const defaultSettings: Settings = {
             playerBan: true,
             hourlyStatus: true,
         },
+    },
+    auth: {
+        username: 'admin',
+        passwordHash: hashPassword('admin'),
     },
 };
 
@@ -88,7 +99,16 @@ class AppSettings {
         this.save();
         return this.settings.telegram;
     }
+
+    getAuth() {
+        return this.settings.auth;
+    }
+
+    updateAuth(config: Partial<AuthConfig>) {
+        this.settings.auth = { ...this.settings.auth, ...config };
+        this.save();
+        return this.settings.auth;
+    }
 }
 
 export default new AppSettings();
-

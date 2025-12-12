@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bedrock Panel · Login</title>
+    <link rel="stylesheet" href="/css/tailwind.css" />
+  </head>
+  <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md bg-slate-900 rounded-2xl shadow-xl p-8 space-y-6 border border-slate-800">
+      <div class="text-center space-y-2">
+        <p class="text-xs uppercase tracking-[0.4em] text-slate-400">Bedrock</p>
+        <h1 class="text-2xl font-semibold">Server Panel</h1>
+        <p class="text-sm text-slate-400">Sign in to manage your Bedrock Dedicated Server.</p>
+      </div>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm text-slate-400 mb-1" for="login-username">Username</label>
+          <input id="login-username" type="text" class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 focus:outline-none focus:border-indigo-500" placeholder="admin" required />
+        </div>
+        <div>
+          <label class="block text-sm text-slate-400 mb-1" for="login-password">Password</label>
+          <input id="login-password" type="password" class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 focus:outline-none focus:border-indigo-500" placeholder="••••••" required />
+        </div>
+        <button type="submit" class="w-full px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 transition-colors text-white font-medium">
+          Sign In
+        </button>
+        <p id="login-feedback" class="text-sm text-center text-rose-400 min-h-[1.25rem]"></p>
+      </form>
+      <p class="text-xs text-center text-slate-500">Default credentials: <code class="bg-slate-800 px-1 rounded text-[11px]">admin / admin</code></p>
+    </div>
+    <script type="module" src="/js/login.js"></script>
+  </body>
+</html>

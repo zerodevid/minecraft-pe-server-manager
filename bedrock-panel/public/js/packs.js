@@ -1,5 +1,6 @@
 import { initWorldSelector, getSelectedWorld, onWorldChange } from './worldSelector.js';
 import { handleBdsError } from './bdsWarning.js';
+import { confirmAction } from './confirmModal.js';
 
 const container = document.getElementById('pack-list');
 const worldSelect = document.getElementById('world-select');
@@ -47,8 +48,8 @@ function packTemplate(group) {
             <span class="text-xs uppercase ${statusClass}">${statusLabel}</span>
           </div>
           <div class="flex gap-3">
-            <button class="px-3 py-2 rounded bg-indigo-600 text-white" data-action="${toggleAction}" data-uuid="${pack.uuid}">${toggleLabel}</button>
-            <button class="px-3 py-2 rounded bg-rose-600 text-white" data-action="delete" data-uuid="${pack.uuid}">Remove</button>
+            <button class="px-3 py-2 rounded bg-indigo-600 text-white" data-action="${toggleAction}" data-uuid="${pack.uuid}" data-name="${pack.name}" data-type="${pack.type}">${toggleLabel}</button>
+            <button class="px-3 py-2 rounded bg-rose-600 text-white" data-action="delete" data-uuid="${pack.uuid}" data-name="${pack.name}" data-type="${pack.type}">Remove</button>
           </div>
         </div>
       `;
@@ -272,11 +273,52 @@ async function uploadSelectedPack() {
 
 uploadBtn?.addEventListener('click', uploadSelectedPack);
 
+function getConfirmDetails(action, name, type) {
+  const label = name ? `"${name}"` : 'this pack';
+  const niceType = type === 'behavior' ? 'behavior pack' : type === 'resource' ? 'resource pack' : 'pack';
+  if (action === 'enable') {
+    return {
+      title: 'Enable Pack',
+      message: `Enable ${label}? Players will load this ${niceType} next time they join.`,
+      confirmLabel: 'Enable',
+      variant: 'primary',
+    };
+  }
+  if (action === 'disable') {
+    return {
+      title: 'Disable Pack',
+      message: `Disable ${label}? It will no longer be active on the server.`,
+      confirmLabel: 'Disable',
+      variant: 'primary',
+    };
+  }
+  if (action === 'delete') {
+    return {
+      title: 'Remove Pack',
+      message: `Remove ${label}? This deletes the ${niceType} from disk.`,
+      confirmLabel: 'Remove',
+      variant: 'danger',
+    };
+  }
+  return null;
+}
+
 container?.addEventListener('click', async (event) => {
   const target = event.target.closest('button[data-action]');
   if (!target) return;
   const uuid = target.dataset.uuid;
   const action = target.dataset.action;
+  const name = target.dataset.name;
+  const type = target.dataset.type;
+
+  const confirmDetails = getConfirmDetails(action, name, type);
+  if (confirmDetails) {
+    const confirmed = await confirmAction(confirmDetails);
+    if (!confirmed) {
+      return;
+    }
+  }
+
   target.disabled = true;
   try {
     await postPack(action, uuid, getSelectedWorld());

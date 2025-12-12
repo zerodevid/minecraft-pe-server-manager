@@ -179,6 +179,11 @@ loadSettings();
 
 const tgSaveBtn = document.getElementById('save-telegram');
 const tgTestBtn = document.getElementById('tg-test-btn');
+const authSaveBtn = document.getElementById('save-auth');
+const authFeedbackEl = document.getElementById('auth-feedback');
+const authUsernameInput = document.getElementById('auth-username');
+const authPasswordInput = document.getElementById('auth-password');
+const authPasswordConfirmInput = document.getElementById('auth-password-confirm');
 
 async function loadTelegramSettings() {
   if (tgSaveBtn) tgSaveBtn.disabled = true;
@@ -272,3 +277,67 @@ if (tgTestBtn) {
 }
 
 loadTelegramSettings();
+
+async function loadAuthSettings() {
+  if (!authUsernameInput) return;
+  try {
+    const res = await fetch('/api/settings/auth');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || 'Unable to load login settings');
+    }
+    authUsernameInput.value = data.username || 'admin';
+  } catch (error) {
+    if (authFeedbackEl) {
+      authFeedbackEl.textContent = error.message;
+      authFeedbackEl.classList.add('text-rose-400');
+    }
+  }
+}
+
+async function saveAuthSettings() {
+  if (!authUsernameInput || !authSaveBtn || !authFeedbackEl) return;
+  const username = authUsernameInput.value.trim();
+  const password = authPasswordInput?.value || '';
+  const confirm = authPasswordConfirmInput?.value || '';
+  if (!username) {
+    authFeedbackEl.textContent = 'Username is required.';
+    authFeedbackEl.classList.add('text-rose-400');
+    return;
+  }
+  if (password && password !== confirm) {
+    authFeedbackEl.textContent = 'Passwords do not match.';
+    authFeedbackEl.classList.add('text-rose-400');
+    return;
+  }
+  authSaveBtn.disabled = true;
+  authFeedbackEl.textContent = 'Saving credentials...';
+  authFeedbackEl.classList.remove('text-rose-400');
+  authFeedbackEl.classList.add('text-slate-400');
+  try {
+    const res = await fetch('/api/settings/auth', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password: password || undefined }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update login settings');
+    }
+    authFeedbackEl.textContent = data.message || 'Login credentials updated.';
+    if (authPasswordInput) authPasswordInput.value = '';
+    if (authPasswordConfirmInput) authPasswordConfirmInput.value = '';
+  } catch (error) {
+    authFeedbackEl.textContent = error.message;
+    authFeedbackEl.classList.add('text-rose-400');
+  } finally {
+    authSaveBtn.disabled = false;
+  }
+}
+
+authSaveBtn?.addEventListener('click', (event) => {
+  event.preventDefault();
+  saveAuthSettings();
+});
+
+loadAuthSettings();
