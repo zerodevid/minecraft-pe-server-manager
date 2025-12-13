@@ -129,6 +129,10 @@ export function selectWorld(world) {
   setActiveWorldOnServer(world).catch((error) => console.error(error));
 }
 
+export function setSelectedWorldLocal(world, options) {
+  setSelected(world, options);
+}
+
 export async function setActiveWorldOnServer(world) {
   const res = await fetch('/api/worlds/select', {
     method: 'POST',

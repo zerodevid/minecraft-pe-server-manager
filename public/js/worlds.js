@@ -4,6 +4,8 @@ import {
   refreshWorldSelector,
   setActiveWorldOnServer,
   selectWorld,
+  getSelectedWorld,
+  setSelectedWorldLocal,
 } from './worldSelector.js';
 import { handleBdsError } from './bdsWarning.js';
 
@@ -55,6 +57,7 @@ function worldCard(world, activeWorld) {
       <div class="flex flex-wrap gap-3">
         <button class="px-3 py-2 rounded bg-slate-700 text-white" data-action="use" data-world="${world.name}">Use</button>
         <button class="px-3 py-2 rounded bg-slate-700/70 text-white" data-action="backup" data-world="${world.name}">Backup</button>
+        <button class="px-3 py-2 rounded bg-amber-600 text-white" data-action="rename" data-world="${world.name}">Rename</button>
         <button class="px-3 py-2 rounded ${isActive ? 'bg-slate-600 cursor-not-allowed text-slate-400' : 'bg-indigo-600 text-white'}" data-action="set-active" data-world="${world.name}" ${isActive ? 'disabled' : ''}>
           Set Active
         </button>
@@ -107,6 +110,41 @@ listEl?.addEventListener('click', async (event) => {
     } finally {
       button.disabled = false;
       button.textContent = 'Backup';
+    }
+    return;
+  }
+
+  if (action === 'rename') {
+    const desired = window.prompt('Enter a new name for this world', world);
+    if (!desired) {
+      return;
+    }
+    const trimmed = desired.trim();
+    if (!trimmed || trimmed === world) {
+      return;
+    }
+    const previousLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Renaming...';
+    const previouslySelected = getSelectedWorld();
+    try {
+      const result = await renameWorldRequest(world, trimmed);
+      listStatusEl.textContent = `World "${world}" renamed to "${result.name}".`;
+      await refreshWorldSelector(worldSelect);
+      if (previouslySelected === world) {
+        setSelectedWorldLocal(result.name);
+        if (worldSelect) {
+          worldSelect.value = result.name;
+        }
+      }
+      await renderWorlds();
+    } catch (error) {
+      if (!handleBdsError(error.message, listStatusEl)) {
+        listStatusEl.textContent = error.message;
+      }
+    } finally {
+      button.disabled = false;
+      button.textContent = previousLabel;
     }
     return;
   }
@@ -247,6 +285,19 @@ async function deleteWorld(world) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data.message || 'Failed to delete world');
+  }
+  return data;
+}
+
+async function renameWorldRequest(world, newName) {
+  const res = await fetch(`/api/worlds/${encodeURIComponent(world)}/rename`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newName }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || 'Failed to rename world');
   }
   return data;
 }

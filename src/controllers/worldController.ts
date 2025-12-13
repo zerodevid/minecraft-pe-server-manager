@@ -92,3 +92,20 @@ export const getWorldIcon = (req: Request, res: Response) => {
   }
   return res.sendFile(iconPath);
 };
+
+export const renameWorld = (req: Request, res: Response) => {
+  if (!ensureBdsDir(res)) {
+    return;
+  }
+  const { name } = req.params;
+  const { newName } = req.body;
+  if (!newName) {
+    return res.status(400).json({ message: 'New name is required' });
+  }
+  try {
+    const result = worldManager.renameWorld(name, newName);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

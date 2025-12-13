@@ -141,6 +141,38 @@ export function deleteWorld(name: string) {
   return { deleted: name, activeWorld: newActive };
 }
 
+export function renameWorld(name: string, nextName: string) {
+  ensureDefaultWorld();
+  if (!name) {
+    throw new Error('World name is required');
+  }
+  if (!nextName) {
+    throw new Error('New world name is required');
+  }
+  const currentPath = path.join(WORLDS_DIR, name);
+  if (!fs.existsSync(currentPath)) {
+    throw new Error('World not found');
+  }
+  const sanitized = sanitizeWorldName(nextName);
+  if (!sanitized) {
+    throw new Error('Invalid world name');
+  }
+  if (sanitized === name) {
+    return { name: sanitized, oldName: name };
+  }
+  const destinationPath = path.join(WORLDS_DIR, sanitized);
+  if (fs.existsSync(destinationPath)) {
+    throw new Error('Another world already uses that name');
+  }
+  fs.renameSync(currentPath, destinationPath);
+  worldJson.ensureWorldPackFiles(sanitized);
+  const active = getActiveWorld();
+  if (active === name) {
+    setActiveWorld(sanitized);
+  }
+  return { name: sanitized, oldName: name };
+}
+
 export function backupWorld(name: string) {
   ensureDefaultWorld();
   if (!name) {
@@ -165,6 +197,7 @@ export default {
   setActiveWorld,
   importWorld,
   deleteWorld,
+  renameWorld,
   backupWorld,
   DEFAULT_WORLD,
 };

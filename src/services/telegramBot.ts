@@ -1,6 +1,12 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import TelegramBot from 'node-telegram-bot-api';
+import { BDS_DIR } from '../config';
 import appSettings from './appSettings';
 import bedrockProcess, { Player } from './bedrockProcess';
+
+const SERVER_PROPERTIES = path.join(BDS_DIR, 'server.properties');
 
 class TelegramService {
     private bot: TelegramBot | null;
@@ -64,7 +70,12 @@ class TelegramService {
                         isBotCommand = true;
                         const status = bedrockProcess.getStatus();
                         const players = bedrockProcess.getPlayers();
-                        await this.sendMessage(`📊 **Server Status**\nStatus: ${status}\nOnline: ${players.length} players`);
+                        await this.sendMessage([
+                            '📊 <b>Server Status</b>',
+                            `Status: ${this.formatStatusLabel(status)}`,
+                            `Players: ${players.length}`,
+                            this.formatServerAddressLine(),
+                        ].join('\n'));
                         break;
 
                     case '/list':
@@ -72,30 +83,32 @@ class TelegramService {
                         isBotCommand = true;
                         const activePlayers = bedrockProcess.getPlayers();
                         if (activePlayers.length === 0) {
-                            await this.sendMessage('👥 **Active Players**\nNo players currently online.');
+                            await this.sendMessage('👥 <b>Active Players</b>\nNo players currently online.');
                         } else {
-                            const playerList = activePlayers.map(p => `- ${p.name} (Ping: ${p.ping}ms)`).join('\n');
-                            await this.sendMessage(`👥 **Active Players (${activePlayers.length})**\n${playerList}`);
+                            const playerList = activePlayers
+                                .map(p => `• ${this.escapeHtml(p.name)} (Ping: ${p.ping}ms)`)
+                                .join('\n');
+                            await this.sendMessage(`👥 <b>Active Players (${activePlayers.length})</b>\n${playerList}`);
                         }
                         break;
 
                     case '/start':
                         isBotCommand = true;
                         const startRes = bedrockProcess.startServer();
-                        await this.sendMessage(startRes.started ? '🚀 Starting server...' : `❌ Failed to start: ${startRes.message}`);
+                        await this.sendMessage(startRes.started ? '🚀 Starting server...' : `❌ Failed to start: ${this.escapeHtml(startRes.message ?? 'Unknown error')}`);
                         break;
 
                     case '/stop':
                         isBotCommand = true;
                         const stopRes = bedrockProcess.stopServer();
-                        await this.sendMessage(stopRes.stopped ? '🛑 Stopping server...' : `❌ Failed to stop: ${stopRes.message}`);
+                        await this.sendMessage(stopRes.stopped ? '🛑 Stopping server...' : `❌ Failed to stop: ${this.escapeHtml(stopRes.message ?? 'Unknown error')}`);
                         break;
 
                     case '/restart':
                         isBotCommand = true;
                         await this.sendMessage('🔄 Restarting server...');
                         const restartRes = await bedrockProcess.restartServer();
-                        await this.sendMessage(restartRes.restarted ? '✅ Server restarted.' : `❌ Failed to restart: ${restartRes.message}`);
+                        await this.sendMessage(restartRes.restarted ? '✅ Server restarted.' : `❌ Failed to restart: ${this.escapeHtml(restartRes.message ?? 'Unknown error')}`);
                         break;
 
                     case '/kick':
@@ -106,9 +119,9 @@ class TelegramService {
                             const kickCmd = `kick "${args}"`;
                             const kickResult = bedrockProcess.sendCommand(kickCmd);
                             if (kickResult.sent) {
-                                await this.sendMessage(`👢 **Kicked**: ${args}`);
+                                await this.sendMessage(`👢 <b>Kicked</b>: <code>${this.escapeHtml(args)}</code>`);
                             } else {
-                                await this.sendMessage(`❌ Failed to kick: ${kickResult.message}`);
+                                await this.sendMessage(`❌ Failed to kick: ${this.escapeHtml(kickResult.message ?? 'Unknown error')}`);
                             }
                         }
                         break;
@@ -121,30 +134,30 @@ class TelegramService {
                             const banCmd = `ban "${args}"`;
                             const banResult = bedrockProcess.sendCommand(banCmd);
                             if (banResult.sent) {
-                                await this.sendMessage(`🚫 **Banned**: ${args}`);
+                                await this.sendMessage(`🚫 <b>Banned</b>: <code>${this.escapeHtml(args)}</code>`);
                             } else {
-                                await this.sendMessage(`❌ Failed to ban: ${banResult.message}`);
+                                await this.sendMessage(`❌ Failed to ban: ${this.escapeHtml(banResult.message ?? 'Unknown error')}`);
                             }
                         }
                         break;
 
                     case '/help':
                         isBotCommand = true;
-                        const helpMsg = `
-🤖 **Bot Commands**
-/status - Check server status
-/list - List active players
-/start - Start server
-/stop - Stop server
-/restart - Restart server
-/kick <name> - Kick a player
-/ban <name> - Ban a player
-/help - Show this message
-
-**Server Console:**
-You can type any Minecraft command (e.g., "time set day", "weather clear"). The bot will forward it to the server console.
-(Leading "/" is optional for console commands).
-                        `;
+                        const helpMsg = [
+                            '🤖 <b>Bot Commands</b>',
+                            '<code>/status</code> - Check server status',
+                            '<code>/list</code> - List active players',
+                            '<code>/start</code> - Start server',
+                            '<code>/stop</code> - Stop server',
+                            '<code>/restart</code> - Restart server',
+                            '<code>/kick &lt;name&gt;</code> - Kick a player',
+                            '<code>/ban &lt;name&gt;</code> - Ban a player',
+                            '<code>/help</code> - Show this message',
+                            '',
+                            '<b>Server Console:</b>',
+                            'Type any Minecraft command (e.g., <code>time set day</code>, <code>weather clear</code>).',
+                            'Commands starting with "/" will be sent without the slash for console compatibility.',
+                        ].join('\n');
                         await this.sendMessage(helpMsg);
                         break;
                 }
@@ -163,9 +176,9 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
 
                 const result = bedrockProcess.sendCommand(cmdToSend);
                 if (result.sent) {
-                    await this.sendMessage(`📥 **Command Sent**: \`${cmdToSend}\``);
+                    await this.sendMessage(`📥 <b>Command Sent</b>: <code>${this.escapeHtml(cmdToSend)}</code>`);
                 } else {
-                    await this.sendMessage(`⚠️ **Failed**: ${result.message}`);
+                    await this.sendMessage(`⚠️ <b>Failed</b>: ${this.escapeHtml(result.message ?? 'Unknown error')}`);
                 }
             }
         });
@@ -196,6 +209,84 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         }
     }
 
+    private escapeHtml(value: string) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    private getServerPort() {
+        try {
+            if (!fs.existsSync(SERVER_PROPERTIES)) {
+                return null;
+            }
+            const content = fs.readFileSync(SERVER_PROPERTIES, 'utf-8');
+            const match = content.match(/^server-port\s*=\s*(.+)$/m);
+            if (match) {
+                return match[1].trim();
+            }
+        } catch (err) {
+            console.warn('Unable to read server.properties:', (err as Error).message);
+        }
+        return null;
+    }
+
+    private getServerIpAddress() {
+        if (process.env.SERVER_IP) {
+            return process.env.SERVER_IP;
+        }
+        const interfaces = os.networkInterfaces();
+        for (const entries of Object.values(interfaces)) {
+            if (!entries) continue;
+            for (const detail of entries) {
+                if (!detail) continue;
+                const familyValue = (detail as { family: string | number }).family;
+                const isIPv4 =
+                    (typeof familyValue === 'string' && familyValue === 'IPv4') ||
+                    (typeof familyValue === 'number' && familyValue === 4);
+                if (isIPv4 && !detail.internal) {
+                    return detail.address;
+                }
+            }
+        }
+        return null;
+    }
+
+    private getServerAddress() {
+        const ip = this.getServerIpAddress();
+        const port = this.getServerPort();
+        if (ip && port) {
+            return `${ip}:${port}`;
+        }
+        if (ip) {
+            return ip;
+        }
+        if (port) {
+            return `:${port}`;
+        }
+        return 'Unavailable';
+    }
+
+    private formatServerAddressLine() {
+        return `Server IP: <code>${this.escapeHtml(this.getServerAddress())}</code>`;
+    }
+
+    private formatStatusLabel(status: string) {
+        if (status === 'running') {
+            return '🟢 Online';
+        }
+        if (status === 'stopped') {
+            return '🔴 Offline';
+        }
+        if (status === 'stopping') {
+            return '🟡 Stopping';
+        }
+        return this.escapeHtml(status || 'Unknown');
+    }
+
     sendMessage(text: string) {
         if (!this.config.enabled) {
             return Promise.reject(new Error('Telegram notifications are disabled.'));
@@ -206,7 +297,12 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         if (!this.bot) {
             return Promise.reject(new Error('Telegram bot is not running.'));
         }
-        return this.bot.sendMessage(this.config.chatId, text).catch(err => {
+        return this.bot
+            .sendMessage(this.config.chatId, text, {
+                parse_mode: 'HTML',
+                disable_web_page_preview: true,
+            })
+            .catch(err => {
             console.error('Telegram Send Error:', err.message);
             throw err;
         });
@@ -215,10 +311,15 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
     setupListeners() {
         // Server Status Events
         bedrockProcess.on('status', (status) => {
-            if (status === 'running' && this.config.events.serverStart) {
-                this.sendMessage('🟢 **Server Started**\nThe Minecraft server is now online.').catch(() => { });
-            } else if (status === 'stopped' && this.config.events.serverStop) {
-                this.sendMessage('🔴 **Server Stopped**\nThe Minecraft server has stopped.').catch(() => { });
+            if (status === 'running' && this.config?.events?.serverStart) {
+                const message = [
+                    '🟢 <b>Server Started</b>',
+                    'The Minecraft server is now online.',
+                    this.formatServerAddressLine(),
+                ].join('\n');
+                this.sendMessage(message).catch(() => { });
+            } else if (status === 'stopped' && this.config?.events?.serverStop) {
+                this.sendMessage('🔴 <b>Server Stopped</b>\nThe Minecraft server has stopped.').catch(() => { });
             }
         });
 
@@ -227,16 +328,16 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
             // Check for joins
             const joined = currentPlayers.filter(p => !this.lastPlayers.find(lp => lp.xuid === p.xuid));
             joined.forEach(p => {
-                if (this.config.events.playerJoin) {
-                    this.sendMessage(`👤 **Player Joined**\n${p.name} has joined the game.`).catch(() => { });
+                if (this.config?.events?.playerJoin) {
+                    this.sendMessage(`👤 <b>Player Joined</b>\n${this.escapeHtml(p.name)} has joined the game.`).catch(() => { });
                 }
             });
 
             // Check for leaves
             const left = this.lastPlayers.filter(lp => !currentPlayers.find(p => p.xuid === lp.xuid));
             left.forEach(p => {
-                if (this.config.events.playerLeave) {
-                    this.sendMessage(`👋 **Player Left**\n${p.name} has left the game.`).catch(() => { });
+                if (this.config?.events?.playerLeave) {
+                    this.sendMessage(`👋 <b>Player Left</b>\n${this.escapeHtml(p.name)} has left the game.`).catch(() => { });
                 }
             });
 
@@ -245,13 +346,13 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
 
         // Console Output parsing for Bans
         bedrockProcess.on('output', (line) => {
-            if (this.config.events.playerBan) {
+            if (this.config?.events?.playerBan) {
                 // Typical Bedrock ban message: "Banned Player: Steve" or similar?
                 // Actual message: "Player <name> has been Banned" or similar.
                 // Let's look for "Banned" keyword or "Unbanned".
                 // Based on simple bedrock behavior, it might be "Banned Name".
                 if (line.includes('Banned') && !line.includes('Function')) { // Avoid debugging noise
-                    this.sendMessage(`🚫 **Ban Event Detected**\nLog: ${line}`).catch(() => { });
+                    this.sendMessage(`🚫 <b>Ban Event Detected</b>\nLog: <code>${this.escapeHtml(line)}</code>`).catch(() => { });
                 }
             }
         });
@@ -261,16 +362,19 @@ You can type any Minecraft command (e.g., "time set day", "weather clear"). The 
         if (this.hourlyInterval) clearInterval(this.hourlyInterval);
 
         this.hourlyInterval = setInterval(() => {
-            if (!this.config.events.hourlyStatus || !this.bot) return;
+            if (!this.config?.events?.hourlyStatus || !this.bot) return;
 
             const status = bedrockProcess.getStatus();
             const players = bedrockProcess.getPlayers();
             const memUsage = process.memoryUsage().rss / 1024 / 1024;
 
-            let msg = `🕒 **Hourly Status Report**\n`;
-            msg += `Status: ${status === 'running' ? '🟢 Online' : '🔴 Offline'}\n`;
-            msg += `Players: ${players.length}\n`;
-            msg += `RAM Usage (Panel): ${memUsage.toFixed(2)} MB`;
+            const msg = [
+                '🕒 <b>Hourly Status Report</b>',
+                `Status: ${this.formatStatusLabel(status)}`,
+                `Players: ${players.length}`,
+                `RAM Usage (Panel): ${memUsage.toFixed(2)} MB`,
+                this.formatServerAddressLine(),
+            ].join('\n');
 
             this.sendMessage(msg).catch(() => { });
         }, 3600000); // 1 hour
