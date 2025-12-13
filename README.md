@@ -2,135 +2,118 @@
 
 ![Bedrock Panel](https://placehold.co/600x400?text=Bedrock+Panel)
 
-**Bedrock Server Panel** is a powerful, web-based management interface for the Minecraft Bedrock Dedicated Server (BDS). It simplifies server administration by providing a GUI for controlling the server instance, managing resource packs, editing world settings, and monitoring player activity in real-time.
+Bedrock Server Panel is a web UI for the Minecraft Bedrock Dedicated Server (BDS). It wraps the BDS process, exposes a friendly dashboard for packs/worlds/settings, and integrates with Telegram so you can keep an eye on the server from anywhere.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Features
 
-### 🎮 Server Control
-- **Start / Stop / Restart**: Full control over the server lifecycle.
-- **Auto-Restart**: Automatically detects crashes and restarts the server process.
-- **Auto-Start**: Can be configured to start the Minecraft server automatically when the panel launches (or on system boot).
-
-### 📊 Real-Time Monitoring
-- **Console Stream**: View the live server console logs directly in your browser.
-- **Player List**: See who is online, their XUID, and connection status.
-- **Resource Usage**: Monitor server RAM usage (via Telegram reports).
-
-### 📦 Asset Management
-- **Pack Manager**: Upload `.mcpack` files via drag-and-drop.
-- **World Manager**: Import `.mcworld` or `.zip` archives to restore or switch worlds.
-- **Auto-Sync**: Automatically updates `world_resource_packs.json` and `world_behavior_packs.json` when you toggle packs in the UI.
-- **Name Cleaning**: Automatically removes Minecraft color codes (e.g., `§e`) from pack names for cleaner display.
-
-### ⚙️ Configuration
-- **Server Properties**: Edit `server.properties` (Gamemode, Difficulty, Port, etc.) through a user-friendly form.
-- **Allowlist / Whitelist**: Manage whitelisted players via the GUI (future update).
-
-### 📱 Telegram Integration
-- **Notifications**: Get real-time alerts for server events.
-- **Events**: Server Start/Stop, Player Join/Leave, Bans.
-- **Hourly Status**: Receive periodic reports on server health and player counts.
+- **Server lifecycle** – start/stop/restart the BDS process, enable auto-restart after crashes, and view the live console stream.
+- **World & pack manager** – import/export `.mcworld`, `.zip`, and `.mcpack` files, clean pack names, and sync `world_resource_packs.json` / `world_behavior_packs.json` automatically.
+- **Real-time player view** – see players, XUIDs, and ping in real time; player join/leave diffing powers Telegram alerts.
+- **Server settings editor** – edit `server.properties` via a validated form with descriptions for every field.
+- **Telegram bot** – get notifications for start/stop/player activity/bans and hourly status reports that include RAM usage and your server IP.
 
 ---
 
-## 🛠️ System Architecture & Flow
+## ✅ Requirements
 
-### 1. The Core (Node.js & Express)
-The application runs on a **Node.js** backend using **Express** for the API and static file serving.
-- **`server.js`**: The entry point. Handles HTTP requests and initializes the WebSocket server.
-- **`bedrockProcess.js`**: A singleton service wrapping the `spawn` process of the Bedrock binary. It captures `stdout`/`stderr` and pipes it to the web console.
-
-### 2. Real-Time Communication
-- **WebSockets (`ws`)**: Connects the frontend to the backend.
-- **Flow**:
-    1. Server logs are emitted from the child process.
-    2. Backend captures these logs.
-    3. WebSocket service broadcasts logs to all connected web clients instantly.
-
-### 3. Data Management
-- **File System**: The app directly reads/writes to the `bds/` directory (properties, JSON files).
-- **Pack Logic**:
-    - Parsing manifests (`manifest.json`) inside packs to identify UUIDs and versions.
-    - Intelligent diffing against `world_resource_packs.json` to ensure consistency.
+1. **Node.js** v16 or later.
+2. **Bedrock Dedicated Server** files downloaded from [minecraft.net](https://www.minecraft.net/en-us/download/server/bedrock).
+3. Modern browser for the admin panel.
+4. *(Optional)* Telegram bot token + chat ID if you want notifications or remote commands.
 
 ---
 
-## 🚀 Installation Guide
+## 🚀 Getting Started
 
-### Prerequisites
-1.  **Node.js**: v16.0.0 or higher.
-2.  **Bedrock Server Binary**: Download from [Minecraft.net](https://www.minecraft.net/en-us/download/server/bedrock) (Ubuntu/Windows version depending on your OS, or MacOS workaround).
+### 1. Clone and install
 
-### Step 1: Clone & Install
 ```bash
-# Clone the repository
 git clone https://github.com/zerodevid/minecraft-pe-server-manager.git
-cd bedrock-panel
-
-# Install Node dependencies
+cd minecraft-pe-server-manager
 npm install
 ```
 
-### Step 2: Set Up Bedrock Server
-1.  Create a folder named `bds` inside the `bedrock-panel` directory.
-2.  Extract your Bedrock Dedicated Server files into `bds/`.
-3.  **Verify**: Ensure `bedrock_server` (executable) and `server.properties` exist at `bedrock-panel/bds/bedrock_server`.
+### 2. Configure your `.env`
 
-*Note for Mac Users*: You may need to allow the binary to run via `chmod +x bds/bedrock_server` and potentially clear quarantine attributes if downloaded from the web.
+Create a `.env` (or edit the existing one) in the project root:
 
-### Step 3: Run the Panel
-```bash
-npm start
+```dotenv
+# Path to the folder that contains bedrock_server and server.properties
+BDS_DIR=/absolute/path/to/bds
+
+# Optional: overrides the IP announced in Telegram reports
+SERVER_IP=play.example.com
 ```
-The panel will be accessible at: `http://localhost:4000`
 
----
+If `BDS_DIR` is omitted, the bundled `./bds` directory is used. Place your Bedrock server files there or point the variable to another location. On macOS/Linux remember to `chmod +x bedrock_server`.
 
-## 📲 Telegram Bot Setup
-1.  Open **Settings** in the web panel.
-2.  Scroll to **Telegram Notifications**.
-3.  **Create a Bot**: Message [@BotFather](https://t.me/BotFather) on Telegram and create a new bot to get a **Token**.
-4.  **Get Chat ID**: Message the bot or add it to a group to get the Chat ID.
-5.  Enter credentials in the panel and click **Save**.
-
----
-
-## 🔄 Auto-Start (Production)
-To run the panel 24/7 and have it start on boot, use **PM2**.
+### 3. Run the panel
 
 ```bash
-# 1. Install PM2 globally
+# Start the API + panel (builds Tailwind once)
+npm run dev
+
+# Optional: watch Tailwind while developing styles
+npm run dev:css
+```
+
+The panel lives at [http://localhost:4000](http://localhost:4000).
+
+For a production build you can precompile with `npm run build` and then use `npm start` (which re-builds CSS and launches the server via `ts-node`).
+
+---
+
+## 📨 Telegram Setup
+
+1. Open **Settings → Telegram Notifications** inside the panel.
+2. Talk to [@BotFather](https://t.me/BotFather) to create a bot and grab the **bot token**.
+3. Send a message to the bot (or add it to a group) and find the **chat ID**.
+4. Paste both values in the panel, toggle the events you want (Server Start/Stop, Player Join/Leave, Player Ban, Hourly Status), then click **Save**.
+5. Use the **Test Message** button to verify delivery.
+
+The Telegram bot also accepts commands such as `/status`, `/list`, `/restart`, `/kick <name>`, `/ban <name>`, and forwards any other text as a console command.
+
+---
+
+## 🔄 Running 24/7 with PM2
+
+```bash
 npm install -g pm2
-
-# 2. Start the panel
 pm2 start npm --name "bedrock-panel" -- run start
-
-# 3. Freeze the process list
 pm2 save
-
-# 4. Generate startup script
-pm2 startup
+pm2 startup   # follow the printed instructions
 ```
-*Run the command generated by the last step to finalize.*
+
+PM2 will relaunch the panel after crashes or reboots.
 
 ---
 
-## 📂 Project Structure
+## 🗂️ Project Structure
+
 ```
-bedrock-panel/
-├── bds/                  # Bedrock Server files (Ignored by Git)
-├── public/               # Frontend (HTML, CSS, JS)
-├── services/
-│   ├── bedrockProcess.js # Manages the server process
-│   ├── packManager.js    # Logic for resource/behavior packs
-│   ├── serverProperties.js # Parser for properties file
-│   └── telegramBot.js    # Telegram notification service
-├── controllers/          # API Route Handlers
-├── app.js                # Express App Setup
-└── server.js             # Entry Point
+minecraft-pe-server-manager/
+├── bds/                     # Bedrock server files (not committed)
+├── public/                  # Static assets (HTML/CSS/JS, Tailwind output)
+├── src/
+│   ├── config.ts            # Resolves paths and validates BDS directory
+│   ├── server.ts            # Express app + WebSocket bootstrap
+│   ├── controllers/         # HTTP API handlers
+│   ├── services/
+│   │   ├── bedrockProcess.ts   # Wraps the BDS child process
+│   │   ├── telegramBot.ts      # Notification and bot command logic
+│   │   ├── worldManager.ts     # Import/export/backup logic
+│   │   └── serverProperties.ts # Parser + serializer for server.properties
+│   ├── styles/              # Tailwind entry file
+│   └── utils/               # Helpers (cookies, hashing, etc.)
+├── public/css/tailwind.css  # Generated stylesheet
+├── panel-settings.json      # Created automatically to store panel auth + telegram config
+└── package.json
 ```
 
-## License
-MIT License
+---
+
+## 📝 License
+
+MIT License. See `LICENSE` for details.
