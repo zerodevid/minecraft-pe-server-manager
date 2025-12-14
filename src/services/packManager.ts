@@ -16,6 +16,71 @@ const SCAN_DIRS = [
   { dir: RESOURCE_DIR, type: 'resource' },
 ];
 
+function stripJsonNoise(content: string) {
+  const withoutBom = content.replace(/^\uFEFF/, '');
+  let inString = false;
+  let escaped = false;
+  let inSingleLineComment = false;
+  let inBlockComment = false;
+  let result = '';
+
+  for (let i = 0; i < withoutBom.length; i += 1) {
+    const char = withoutBom[i];
+    const next = withoutBom[i + 1];
+
+    if (inSingleLineComment) {
+      if (char === '\n' || char === '\r') {
+        inSingleLineComment = false;
+        result += char;
+      }
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (char === '*' && next === '/') {
+        inBlockComment = false;
+        i += 1;
+      }
+      continue;
+    }
+
+    if (!inString && char === '/' && next === '/') {
+      inSingleLineComment = true;
+      i += 1;
+      continue;
+    }
+
+    if (!inString && char === '/' && next === '*') {
+      inBlockComment = true;
+      i += 1;
+      continue;
+    }
+
+    result += char;
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+    } else if (char === '"') {
+      inString = true;
+      escaped = false;
+    }
+  }
+
+  return result;
+}
+
+function readManifestFile(manifestPath: string) {
+  const raw = fs.readFileSync(manifestPath, 'utf-8');
+  const sanitized = stripJsonNoise(raw);
+  return JSON.parse(sanitized);
+}
+
 interface Pack {
   uuid: string;
   name: string;
@@ -124,7 +189,7 @@ function loadPackManifest(pack: Pack) {
     return null;
   }
   try {
-    return JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    return readManifestFile(manifestPath);
   } catch (error) {
     return null;
   }
@@ -187,7 +252,7 @@ function scanDirectoryForPacks(dir: string, fallbackType: string) {
       return;
     }
     try {
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      const manifest = readManifestFile(manifestPath);
       validateManifest(manifest);
       const type = getPackType(manifest) || fallbackType;
       const version = normalizeVersion(manifest.header?.version || [1, 0, 0]);
@@ -379,7 +444,14 @@ export async function installPack(uploadPath: string) {
 
     const packs = readPacks();
     const installed = manifestFiles.map((manifestPath) => {
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      let manifest;
+      try {
+        manifest = readManifestFile(manifestPath);
+      } catch (error) {
+        const relative = path.relative(extractDir, manifestPath);
+        const hint = relative && !relative.startsWith('..') ? relative : path.basename(manifestPath);
+        throw new Error(`Invalid manifest.json (${hint}): ${(error as Error).message}`);
+      }
       validateManifest(manifest);
       const type = getPackType(manifest);
       const version = normalizeVersion(manifest.header?.version || [1, 0, 0]);
